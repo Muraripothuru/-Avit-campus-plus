@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:avit_campus_plus/app/app_state.dart';
 import 'package:avit_campus_plus/core/security/secure_store.dart';
-import 'package:avit_campus_plus/features/auth/login_screen.dart';
-import 'package:avit_campus_plus/features/account/settings_screen.dart';
 import 'package:avit_campus_plus/features/campus/campus_screen.dart';
 import 'package:avit_campus_plus/features/dashboard/dashboard_screen.dart';
 import 'package:avit_campus_plus/features/safety/complaints_screen.dart';
@@ -146,41 +144,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('sign out asks for confirmation and ends the session', (
+  testWidgets('settings offers no sign out — the app is always open', (
     WidgetTester tester,
   ) async {
-    final AppState state = await boot(tester, email: student);
+    await boot(tester, email: student);
     await openRoute(tester, '/settings');
-
-    // Settings is a lazy list: scroll the sign-out button into view first.
-    await tester.scrollUntilVisible(
-      find.text('Sign out'),
-      400,
-      scrollable: find.descendant(
-        of: find.byType(SettingsScreen),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    await pumpFrames(tester, count: 2);
-
-    await tester.tap(find.text('Sign out'));
     await pumpFrames(tester, count: 3);
-    expect(find.byType(AlertDialog), findsOneWidget);
 
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.text('Sign out'),
-      ),
-    );
-    await pumpFrames(tester, count: 6);
-
-    expect(state.user, isNull, reason: 'session ended');
-    expect(
-      find.byType(LoginScreen, skipOffstage: false),
-      findsOneWidget,
-      reason: 'signed-out users land on the login screen',
-    );
+    expect(find.text('Sign out'), findsNothing);
+    expect(find.text('Logout'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

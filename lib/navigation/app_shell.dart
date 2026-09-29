@@ -65,47 +65,6 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  Future<void> _confirmLogout() async {
-    final bool confirmed = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            title: const Text('Sign out?'),
-            content: const Text(
-              'You will need to sign in again to access your campus account.',
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text(
-                  'Sign out',
-                  style: TextStyle(color: AppColors.danger),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-
-    if (!confirmed || !mounted) return;
-
-    final AppScope scope = AppScope.of(context);
-    await scope.state.signOut();
-    if (!mounted) return;
-    showAVITSnackBar(
-      context,
-      message: 'Logged out successfully',
-      tone: AVITSnackTone.success,
-    );
-    Navigator.of(context).pushNamedAndRemoveUntil(Routes.login, (_) => false);
-  }
-
   /// Contextual FAB: quick actions on Home, reminder on Activities.
   void _handleFab() {
     switch (_tab) {
@@ -280,7 +239,6 @@ class _AppShellState extends State<AppShell> {
       drawer: AVITDrawer(
         currentRoute: _tab.route,
         onNavigate: _handleDrawerNavigation,
-        onLogout: _confirmLogout,
       ),
       body: SafeArea(
         top: false,

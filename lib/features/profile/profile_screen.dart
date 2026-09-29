@@ -6,11 +6,9 @@ import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
-import '../../core/utils/snackbar.dart';
 import '../../models/user.dart';
 import '../../widgets/avit_cards.dart';
 import '../../widgets/avit_feedback.dart';
-import '../../widgets/avit_inputs.dart';
 
 /// Student / staff profile with account actions and role-aware entries.
 class ProfileScreen extends StatefulWidget {
@@ -200,54 +198,10 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ],
           const SizedBox(height: AppSpacing.lg),
-          AVITButton(
-            label: 'Sign out',
-            variant: AVITButtonVariant.danger,
-            icon: Icons.logout_rounded,
-            onPressed: () => _confirmLogout(),
-          ),
           const SizedBox(height: AppSpacing.xl),
         ],
       ),
     );
-  }
-
-  Future<void> _confirmLogout() async {
-    final bool confirmed = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            title: const Text('Sign out?'),
-            content: const Text(
-              'You will need to sign in again to access your campus account.',
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text(
-                  'Sign out',
-                  style: TextStyle(color: AppColors.danger),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmed || !mounted) return;
-    await AppScope.of(context).state.signOut();
-    if (!mounted) return;
-    showAVITSnackBar(
-      context,
-      message: 'Logged out successfully',
-      tone: AVITSnackTone.success,
-    );
-    Navigator.of(context).pushNamedAndRemoveUntil(Routes.login, (_) => false);
   }
 }
 

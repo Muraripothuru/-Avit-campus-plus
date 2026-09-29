@@ -18,6 +18,7 @@ class AVITServiceCard extends StatelessWidget {
     this.subtitle,
     this.tone = AVITStatusTone.brand,
     this.badge,
+    this.imageAsset,
   });
 
   final String title;
@@ -26,6 +27,9 @@ class AVITServiceCard extends StatelessWidget {
   final AVITStatusTone tone;
   final VoidCallback onTap;
   final int? badge;
+
+  /// Example image that fills the entire tile; falls back to [icon].
+  final String? imageAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +42,59 @@ class AVITServiceCard extends StatelessWidget {
       AVITStatusTone.brand => AppColors.royalBlue,
     };
     final TextTheme text = Theme.of(context).textTheme;
+
+    if (imageAsset != null) {
+      return AVITAnimatedCard(
+        onTap: onTap,
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
+          borderRadius: AppRadius.card,
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              Image.asset(
+                imageAsset!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  color: accent.withValues(alpha: 0.12),
+                  alignment: Alignment.center,
+                  child: Icon(icon, color: accent, size: 28),
+                ),
+              ),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[Colors.transparent, Color(0x99000000)],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 6,
+                right: 6,
+                bottom: 6,
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.labelMedium?.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w800,
+                    shadows: <Shadow>[
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return AVITAnimatedCard(
       onTap: onTap,

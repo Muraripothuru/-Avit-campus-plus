@@ -274,11 +274,11 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('guest is redirected to login for protected routes', (
+  testWidgets('a fresh visitor enters directly — no login gate', (
     WidgetTester tester,
   ) async {
     await openRoute(tester, Routes.settings);
-    expect(screenOf(LoginScreen), findsOneWidget);
+    expect(screenOf(SettingsScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

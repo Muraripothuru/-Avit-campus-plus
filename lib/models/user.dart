@@ -146,6 +146,29 @@ class AppUser {
         ? null
         : DateTime.tryParse(json['createdAt'] as String),
   );
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'id': id,
+    'fullName': fullName,
+    'email': email,
+    'role': role.apiValue,
+    'studentId': studentId,
+    'phone': phone,
+    'programme': programme,
+    'department': department,
+    'semester': semester,
+    'year': year,
+    'hostel': hostel,
+    'emergencyContact': emergencyContact,
+    'avatarUrl': avatarUrl,
+    'emailVerified': emailVerified,
+    'phoneVerified': phoneVerified,
+    'biometricEnabled': biometricEnabled,
+    'profileVisibility': profileVisibility,
+    'locationConsent': locationConsent,
+    'emergencyLocationSharing': emergencyLocationSharing,
+    'createdAt': createdAt?.toIso8601String(),
+  };
 }
 
 /// A device session the user can inspect and revoke.

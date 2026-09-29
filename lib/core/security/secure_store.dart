@@ -18,6 +18,7 @@ abstract final class SecureKeys {
   static const String lastUserId = 'avit.last.user.id';
   static const String pendingSignup = 'avit.pending.signup';
   static const String pendingOtpPurpose = 'avit.pending.otp.purpose';
+  static const String demoAccounts = 'avit.demo.accounts';
 }
 
 /// Android Keystore / iOS Keychain backed storage.

@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../app/app_scope.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/utils/snackbar.dart';
-import '../../widgets/avit_inputs.dart';
 
-/// Landing screen with animated campus illustration and entry points.
+/// Intro splash shown only for unknown routes — the app itself opens
+/// straight into the dashboard with no login gate.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -23,13 +20,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     duration: const Duration(milliseconds: 900),
   )..forward();
 
-  // Lives on the screen so the student-ID dialog can outlive its animation
-  // without touching a disposed controller.
-  final TextEditingController _lookup = TextEditingController();
-
   @override
   void dispose() {
-    _lookup.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -47,32 +39,44 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const SizedBox(height: AppSpacing.xl),
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _controller,
-                    curve: const Interval(0, 0.6),
-                  ),
-                  child: Text(
-                    AppConstants.appName,
-                    style: text.headlineMedium?.copyWith(
-                      color: AppColors.navy,
-                      fontWeight: FontWeight.w800,
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          FadeTransition(
+                            opacity: CurvedAnimation(
+                              parent: _controller,
+                              curve: const Interval(0, 0.6),
+                            ),
+                            child: Text(
+                              AppConstants.appName,
+                              style: text.headlineMedium?.copyWith(
+                                color: AppColors.navy,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          FadeTransition(
+                            opacity: CurvedAnimation(
+                              parent: _controller,
+                              curve: const Interval(0.2, 0.8),
+                            ),
+                            child: Text(
+                              AppConstants.universityName,
+                              style: text.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _controller,
-                    curve: const Interval(0.2, 0.8),
-                  ),
-                  child: Text(
-                    AppConstants.universityName,
-                    style: text.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Expanded(child: _CampusIllustration(animation: _controller)),
@@ -97,28 +101,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      AVITButton(
-                        label: 'Login',
-                        icon: Icons.login_rounded,
-                        onPressed: () =>
-                            Navigator.pushNamed(context, Routes.login),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      AVITButton(
-                        label: 'Create student account',
-                        icon: Icons.person_add_rounded,
-                        variant: AVITButtonVariant.secondary,
-                        onPressed: () =>
-                            Navigator.pushNamed(context, Routes.signup),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => _continueWithStudentId(context),
-                          child: const Text('Continue with Student ID'),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
                     ],
                   ),
                 ),
@@ -128,49 +110,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         ),
       ),
     );
-  }
-
-  Future<void> _continueWithStudentId(BuildContext context) async {
-    final AppScope scope = AppScope.of(context);
-    final TextEditingController controller = _lookup..clear();
-    final String? id = await showDialog<String>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: const Text('Continue with Student ID'),
-        content: AVITTextField(
-          label: 'Student ID',
-          hint: 'AVIT2026CS001',
-          controller: controller,
-          required: true,
-          textInputAction: TextInputAction.done,
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-    if (id == null || id.isEmpty || !context.mounted) return;
-    final bool known = scope.state.deps.isDemoMode;
-    if (known) {
-      Navigator.pushNamed(context, Routes.login);
-      showAVITSnackBar(
-        context,
-        message: 'Enter your password to continue as $id',
-        tone: AVITSnackTone.neutral,
-      );
-    } else {
-      Navigator.pushNamed(context, Routes.login);
-    }
   }
 }
 

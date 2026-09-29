@@ -9,7 +9,6 @@ import '../../core/utils/snackbar.dart';
 import '../../widgets/avit_app_bar.dart';
 import '../../widgets/avit_cards.dart';
 import '../../widgets/avit_feedback.dart';
-import '../../widgets/avit_inputs.dart';
 
 /// Preferences: appearance, biometrics, notifications, privacy and account.
 class SettingsScreen extends StatefulWidget {
@@ -38,30 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : 'Biometric authentication was cancelled',
       tone: ok ? AVITSnackTone.success : AVITSnackTone.warning,
     );
-  }
-
-  Future<void> _signOut() async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text('You will need your password to sign back in.'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sign out'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    await AppScope.of(context).state.signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil(Routes.login, (r) => false);
   }
 
   @override
@@ -242,12 +217,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.science_rounded,
                 ),
               ),
-            AVITButton(
-              label: 'Sign out',
-              variant: AVITButtonVariant.danger,
-              icon: Icons.logout_rounded,
-              onPressed: _signOut,
-            ),
             const SizedBox(height: AppSpacing.xl),
           ],
         ),

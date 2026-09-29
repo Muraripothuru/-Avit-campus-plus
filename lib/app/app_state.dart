@@ -108,7 +108,7 @@ class AppDependencies {
       warden = RemoteWardenRepository(api);
       admin = RemoteAdminRepository(api: api, audit: audit);
     } else {
-      auth = DemoAuthRepository(tokens: tokens, audit: audit);
+      auth = DemoAuthRepository(tokens: tokens, audit: audit, store: store);
       content = DemoContentRepository(localStore);
       activities = DemoActivityRepository(localStore);
       campus = DemoCampusRepository(
@@ -217,7 +217,14 @@ class AppState extends ChangeNotifier {
       final String? lastId = await deps.tokens.lastUserId();
       final bool hasSession = await deps.store.containsKey(SecureKeys.accessToken);
       if (hasSession && lastId != null) {
-        _user = _demoUserFor(lastId) ?? _user;
+        _user = await _demoUserFor(lastId) ?? _user;
+      } else if (deps.isDemoMode) {
+        final AuthResult result = await deps.auth.login(
+          identifier: DemoCatalog.student.email,
+          password: DemoCredentials.password,
+        );
+        _user = result.user;
+        await deps.store.write(SecureKeys.lastUserId, result.user.id);
       }
     } catch (_) {
       // Never block startup on storage errors.
@@ -226,7 +233,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  AppUser? _demoUserFor(String id) {
+  Future<AppUser?> _demoUserFor(String id) async {
+    final AuthRepository repo = deps.auth;
+    if (repo is DemoAuthRepository) {
+      // Includes accounts created through sign-up.
+      return repo.userById(id);
+    }
     for (final (UserRole _, AppUser user, String _) in DemoCatalog.accounts) {
       if (user.id == id) return user;
     }
@@ -287,7 +299,7 @@ class AppState extends ChangeNotifier {
     // the demo catalogue keyed by the stored user id.
     final String? id = await deps.tokens.lastUserId();
     if (id == null) return;
-    final AppUser? found = _demoUserFor(id);
+    final AppUser? found = await _demoUserFor(id);
     if (found != null) {
       _user = found;
       notifyListeners();

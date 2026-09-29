@@ -3,6 +3,7 @@ import '../../core/security/audit_log.dart';
 import '../../core/security/otp_service.dart';
 import '../../core/security/password_hasher.dart';
 import '../../core/security/rate_limiter.dart';
+import '../../core/security/secure_store.dart';
 import '../../core/security/signed_tokens.dart';
 import '../../core/utils/app_exception.dart';
 import '../../models/user.dart';
@@ -277,12 +278,17 @@ class DemoAuthRepository implements AuthRepository {
   DemoAuthRepository({
     required this.tokens,
     required this.audit,
+    this.store,
     OtpService? otp,
     this.tokenSecret = 'avit-demo-signing-secret',
   }) : _otp = otp ?? OtpService();
 
   final TokenManager tokens;
   final AuditLog audit;
+
+  /// When supplied, accounts created through sign-up survive an app restart
+  /// (same secure storage the session tokens already use).
+  final SecureStore? store;
   final OtpService _otp;
   final String tokenSecret;
 
@@ -293,11 +299,74 @@ class DemoAuthRepository implements AuthRepository {
   final RateLimiter _otpLimiter = RateLimiter(maxAttempts: 5, window: const Duration(minutes: 10));
   final Map<String, OtpChallenge> _challenges = <String, OtpChallenge>{};
 
+  /// Accounts created by sign-up, kept alongside the seeded demo catalogue
+  /// so a new user can sign out and sign back in after a restart.
+  final List<_DemoAccount> _registered = <_DemoAccount>[];
+  bool _registeredLoaded = false;
+
+  Future<void> _ensureRegisteredLoaded() async {
+    if (_registeredLoaded) return;
+    _registeredLoaded = true;
+    final SecureStore? storage = store;
+    if (storage == null) return;
+    try {
+      final String? raw = await storage.read(SecureKeys.demoAccounts);
+      if (raw == null || raw.isEmpty) return;
+      final List<Object?> rows = jsonDecode(raw) as List<Object?>;
+      for (final Object? row in rows) {
+        if (row is! Map) continue;
+        final Object? userJson = Map<Object?, Object?>.from(row)['user'];
+        final Object? password =
+            Map<Object?, Object?>.from(row)['password'];
+        if (userJson is! Map || password is! String) continue;
+        _registered.add(
+          _DemoAccount(
+            user: AppUser.fromJson(Map<String, Object?>.from(userJson)),
+            password: password,
+          ),
+        );
+      }
+    } catch (_) {
+      // A corrupt payload only costs the locally created accounts.
+      _registered.clear();
+    }
+  }
+
+  Future<void> _persistRegistered() async {
+    final SecureStore? storage = store;
+    if (storage == null) return;
+    try {
+      final String payload = jsonEncode(<Map<String, Object?>>[
+        for (final _DemoAccount account in _registered)
+          <String, Object?>{
+            'user': account.user.toJson(),
+            'password': account.password,
+          },
+      ]);
+      await storage.write(SecureKeys.demoAccounts, payload);
+    } catch (_) {
+      // Best effort: the account still works for this run of the app.
+    }
+  }
+
+  /// Restores a signed-up account after the app restarts.
+  Future<AppUser?> userById(String id) async {
+    await _ensureRegisteredLoaded();
+    return _userById(id);
+  }
+
   @override
   bool get isRemote => false;
 
   AppUser? _findUser(String identifier) {
     final String value = identifier.trim().toLowerCase();
+    for (final _DemoAccount account in _registered) {
+      final AppUser user = account.user;
+      if (user.email.toLowerCase() == value ||
+          (user.studentId?.toLowerCase() == value)) {
+        return user;
+      }
+    }
     for (final (UserRole _, AppUser user, String _) in DemoCatalog.accounts) {
       if (user.email.toLowerCase() == value ||
           (user.studentId?.toLowerCase() == value)) {
@@ -308,6 +377,9 @@ class DemoAuthRepository implements AuthRepository {
   }
 
   AppUser? _userById(String id) {
+    for (final _DemoAccount account in _registered) {
+      if (account.user.id == id) return account.user;
+    }
     for (final (UserRole _, AppUser user, String _)
         in DemoCatalog.accounts) {
       if (user.id == id) return user;
@@ -316,6 +388,9 @@ class DemoAuthRepository implements AuthRepository {
   }
 
   String? _passwordFor(AppUser user) {
+    for (final _DemoAccount account in _registered) {
+      if (account.user.id == user.id) return account.password;
+    }
     for (final (UserRole _, AppUser candidate, String password)
         in DemoCatalog.accounts) {
       if (candidate.id == user.id) return password;
@@ -327,7 +402,8 @@ class DemoAuthRepository implements AuthRepository {
   Future<AuthResult> login({
     required String identifier,
     required String password,
-  }) async {
+  }  ) async {
+    await _ensureRegisteredLoaded();
     _loginLimiter.check(identifier.toLowerCase());
 
     final AppUser? user = _findUser(identifier);
@@ -401,6 +477,7 @@ class DemoAuthRepository implements AuthRepository {
 
   @override
   Future<void> requestOtp(String destination) async {
+    await _ensureRegisteredLoaded();
     _otpLimiter.check(destination.toLowerCase());
     final String email = destination.trim().toLowerCase();
     final bool known = _findUser(email) != null;
@@ -459,6 +536,7 @@ class DemoAuthRepository implements AuthRepository {
     required int semester,
     required String password,
   }) async {
+    await _ensureRegisteredLoaded();
     if (_findUser(email) != null || _findUser(studentId) != null) {
       throw const AppException(
         'An account already exists for this student ID or email',
@@ -477,11 +555,14 @@ class DemoAuthRepository implements AuthRepository {
       emailVerified: true,
       createdAt: DateTime.now(),
     );
+    _registered.add(_DemoAccount(user: user, password: password));
+    await _persistRegistered();
     return _issue(user);
   }
 
   @override
   Future<void> requestPasswordReset(String identifier) async {
+    await _ensureRegisteredLoaded();
     if (_findUser(identifier) == null) {
       // Do not reveal whether an account exists.
       _lastIssuedCode = null;
@@ -515,6 +596,7 @@ class DemoAuthRepository implements AuthRepository {
     required String currentPassword,
     required String newPassword,
   }) async {
+    await _ensureRegisteredLoaded();
     final String? userId = tokens.cached?.userId;
     if (userId == null) throw AppException.unauthorized;
     final AppUser user = _userById(userId) ?? DemoCatalog.student;
@@ -541,6 +623,7 @@ class DemoAuthRepository implements AuthRepository {
     if (payload == null || SignedTokens.isExpired(payload)) return false;
     final String? userId = payload['sub'] as String?;
     if (userId == null) return false;
+    await _ensureRegisteredLoaded();
     final AppUser? user = _userById(userId);
     if (user == null) return false;
     await _issue(user);
@@ -593,4 +676,12 @@ class DemoAuthRepository implements AuthRepository {
     );
     await tokens.clear(forgetUser: everywhere);
   }
+}
+
+/// A demo account created through sign-up (profile plus its password).
+class _DemoAccount {
+  const _DemoAccount({required this.user, required this.password});
+
+  final AppUser user;
+  final String password;
 }

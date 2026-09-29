@@ -38,6 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   List<Announcement> _announcements = <Announcement>[];
   List<CampusEvent> _events = <CampusEvent>[];
   double _attendance = 0;
+  int _credits = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -62,6 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       final List<Announcement> anns = await deps.content.announcements();
       final List<CampusEvent> events = await deps.activities.events();
       final double overall = await deps.content.overallAttendance();
+      final List<Course> courses = await deps.content.courses();
       if (!mounted) return;
       final int weekday = DateTime.now().weekday;
       setState(() {
@@ -78,6 +80,10 @@ class _DashboardScreenState extends State<DashboardScreen>
             .take(4)
             .toList();
         _attendance = overall;
+        _credits = courses.fold<int>(
+          0,
+          (int total, Course course) => total + course.credits,
+        );
         _loading = false;
       });
     } on AppException catch (e) {
@@ -112,6 +118,13 @@ class _DashboardScreenState extends State<DashboardScreen>
         padding: AppSpacing.screenPadding,
         children: <Widget>[
           _GreetingHeader(user: user),
+          const SizedBox(height: AppSpacing.md),
+          _AcademicSnapshot(
+            semester: user?.semester,
+            attendance: _attendance,
+            credits: _credits,
+            classesToday: _today.length,
+          ),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: <Widget>[
@@ -307,10 +320,68 @@ class _GreetingHeader extends StatelessWidget {
     final DateTime now = DateTime.now();
 
     return AVITCard(
-      gradient: AppColors.heroGradient,
+      padding: EdgeInsets.zero,
       borderColor: Colors.transparent,
-      child: Row(
-        children: <Widget>[
+      child: ClipRRect(
+        borderRadius: AppRadius.card,
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/college.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.expand(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.heroGradient,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: <Color>[
+                      AppColors.navy.withValues(alpha: 0.85),
+                      AppColors.navy.withValues(alpha: 0.45),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: AppSpacing.cardPadding,
+              child: Row(
+                children: <Widget>[
+          Container(
+            width: 56,
+            height: 56,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.20),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Text(
+              _initials(user?.fullName ?? 'Student'),
+              style: text.titleMedium?.copyWith(
+                color: AppColors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,16 +489,187 @@ class _GreetingHeader extends StatelessWidget {
                   ],
                 ),
               ),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  ),
+);
   }
 
   static String _short(String value) {
     final String cleaned = value.replaceAll('B.Tech ', '');
     return cleaned.length > 26 ? '${cleaned.substring(0, 26)}…' : cleaned;
+  }
+
+  static String _initials(String name) {
+    final List<String> parts =
+        name.trim().split(RegExp(r'\s+')).where((String p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return 'S';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+}
+
+/// Academic snapshot: four tappable stat Containers (semester, attendance,
+/// credits, classes today) laid out with a responsive Wrap.
+class _AcademicSnapshot extends StatelessWidget {
+  const _AcademicSnapshot({
+    required this.semester,
+    required this.attendance,
+    required this.credits,
+    required this.classesToday,
+  });
+
+  final int? semester;
+  final double attendance;
+  final int credits;
+  final int classesToday;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+      constraints: const BoxConstraints(maxWidth: 640),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        alignment: WrapAlignment.spaceBetween,
+        children: <Widget>[
+          _StatTile(
+            icon: Icons.school_rounded,
+            label: 'Semester',
+            value: semester == null ? '—' : '$semester',
+            caption: 'Current',
+            detail: semester == null
+                ? 'No semester on record yet.'
+                : 'You are in semester $semester of your programme.',
+          ),
+          _StatTile(
+            icon: Icons.fact_check_rounded,
+            label: 'Attendance',
+            value: '${attendance.toStringAsFixed(0)}%',
+            caption: 'Required 75%',
+            detail: attendance >= 75
+                ? 'Attendance is on track at ${attendance.toStringAsFixed(0)}%.'
+                : 'Attendance is ${attendance.toStringAsFixed(0)}% — '
+                    'below the required 75%.',
+          ),
+          _StatTile(
+            icon: Icons.menu_book_rounded,
+            label: 'Credits',
+            value: '$credits',
+            caption: 'Enrolled',
+            detail: 'You are enrolled for $credits credits this semester.',
+          ),
+          _StatTile(
+            icon: Icons.today_rounded,
+            label: 'Classes today',
+            value: '$classesToday',
+            caption: 'Scheduled',
+            detail: classesToday == 0
+                ? 'No classes scheduled for today.'
+                : '$classesToday classes are scheduled for today.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One academic indicator: an explicit-size Container with a border,
+/// rounded corners, shadow and a tap that reports back via SnackBar.
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.caption,
+    required this.detail,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String caption;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    return SizedBox(
+      width: 148,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          onTap: () =>
+              showAVITSnackBar(context, message: detail, tone: AVITSnackTone.neutral),
+          child: Container(
+            height: 96,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            alignment: Alignment.centerLeft,
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.border),
+              boxShadow: AppShadow.subtle,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(icon, size: 16, color: AppColors.royalBlue),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: text.labelSmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: text.titleLarge?.copyWith(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  caption,
+                  style: text.labelSmall?.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -556,16 +798,65 @@ class _QuickServices extends StatelessWidget {
 
   final int announcements;
 
-  static const List<(IconData, String, String, AVITStatusTone)> _services =
-      <(IconData, String, String, AVITStatusTone)>[
-        (Icons.qr_code_rounded, 'Gate Pass', Routes.gatePass, AVITStatusTone.brand),
-        (Icons.directions_bus_rounded, 'Transport', Routes.transport, AVITStatusTone.brand),
-        (Icons.badge_rounded, 'Visitor Pass', Routes.visitorPass, AVITStatusTone.brand),
-        (Icons.hourglass_top_rounded, 'Smart Queue', Routes.smartQueue, AVITStatusTone.info),
-        (Icons.map_rounded, 'Campus Map', Routes.campusMap, AVITStatusTone.info),
-        (Icons.local_library_rounded, 'Library', Routes.library, AVITStatusTone.brand),
-        (Icons.emergency_rounded, 'Emergency', Routes.emergency, AVITStatusTone.danger),
-        (Icons.support_agent_rounded, 'Help', Routes.help, AVITStatusTone.info),
+  static const List<(IconData, String, String, AVITStatusTone, String)>
+      _services =
+      <(IconData, String, String, AVITStatusTone, String)>[
+        (
+          Icons.qr_code_rounded,
+          'Gate Pass',
+          Routes.gatePass,
+          AVITStatusTone.brand,
+          'assets/images/services/gate_pass.png',
+        ),
+        (
+          Icons.directions_bus_rounded,
+          'Transport',
+          Routes.transport,
+          AVITStatusTone.brand,
+          'assets/images/services/transport.png',
+        ),
+        (
+          Icons.badge_rounded,
+          'Visitor Pass',
+          Routes.visitorPass,
+          AVITStatusTone.brand,
+          'assets/images/services/visitor_pass.png',
+        ),
+        (
+          Icons.hourglass_top_rounded,
+          'Smart Queue',
+          Routes.smartQueue,
+          AVITStatusTone.info,
+          'assets/images/services/smart_queue.png',
+        ),
+        (
+          Icons.map_rounded,
+          'Campus Map',
+          Routes.campusMap,
+          AVITStatusTone.info,
+          'assets/images/services/campus_map.png',
+        ),
+        (
+          Icons.local_library_rounded,
+          'Library',
+          Routes.library,
+          AVITStatusTone.brand,
+          'assets/images/services/library.png',
+        ),
+        (
+          Icons.emergency_rounded,
+          'Emergency',
+          Routes.emergency,
+          AVITStatusTone.danger,
+          'assets/images/services/emergency.png',
+        ),
+        (
+          Icons.support_agent_rounded,
+          'Help',
+          Routes.help,
+          AVITStatusTone.info,
+          'assets/images/services/help.png',
+        ),
       ];
 
   @override
@@ -578,12 +869,19 @@ class _QuickServices extends StatelessWidget {
       crossAxisSpacing: AppSpacing.sm,
       childAspectRatio: 0.82,
       children: <Widget>[
-        for (final (IconData icon, String label, String route, AVITStatusTone tone)
+        for (final (
+              IconData icon,
+              String label,
+              String route,
+              AVITStatusTone tone,
+              String image,
+            )
             in _services)
           AVITServiceCard(
             title: label,
             icon: icon,
             tone: tone,
+            imageAsset: image,
             onTap: () => Navigator.pushNamed(context, route),
           ),
       ],

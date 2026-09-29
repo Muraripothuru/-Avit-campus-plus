@@ -181,7 +181,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     const SizedBox(height: AppSpacing.md),
                     AVITTextField(
                       label: 'Student ID',
-                      hint: 'AVIT2026CS001',
+                      hint: 'AVIT2026CS042',
                       controller: _studentId,
                       required: true,
                       prefixIcon: Icons.badge_rounded,

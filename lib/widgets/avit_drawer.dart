@@ -12,12 +12,10 @@ class AVITDrawer extends StatelessWidget {
     super.key,
     required this.currentRoute,
     required this.onNavigate,
-    required this.onLogout,
   });
 
   final String currentRoute;
   final ValueChanged<String> onNavigate;
-  final VoidCallback onLogout;
 
   static const Map<String, List<(_Group, List<(_Item, String)>)>>
   _structure = <String, List<(_Group, List<(_Item, String)>)>>{
@@ -129,18 +127,6 @@ class AVITDrawer extends StatelessWidget {
                   ),
               ],
             ],
-            const Divider(height: AppSpacing.lg, indent: 16, endIndent: 16),
-            ListTile(
-              leading: const Icon(Icons.logout_rounded, color: AppColors.danger),
-              title: Text(
-                'Logout',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppColors.danger,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              onTap: onLogout,
-            ),
             const SizedBox(height: AppSpacing.md),
           ],
         ),
