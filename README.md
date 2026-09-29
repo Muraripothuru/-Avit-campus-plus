@@ -27,20 +27,6 @@ flutter run                      # demo repositories (works offline)
 flutter run --dart-define=API_BASE_URL=https://api.example.com
 ```
 
-### Demo sign-in
-
-| Email | Role |
-| --- | --- |
-| `student@avit.ac.in` | Student |
-| `security@avit.ac.in` | Security |
-| `warden@avit.ac.in` | Warden |
-| `admin@avit.ac.in` | Admin |
-
-Password: `Avit@2026Demo`
-
-Biometric unlock (Face/Touch/fingerprint) can be enabled from **Settings →
-Biometric unlock** after the first sign-in.
-
 ## Configuration
 
 * `API_BASE_URL` — when defined, the app talks to the real REST backend;
