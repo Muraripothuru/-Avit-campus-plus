@@ -27,6 +27,7 @@ class AVITTextField extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.validator,
+    this.onSaved,
     this.errorText,
     this.autocorrect = false,
     this.textCapitalization = TextCapitalization.none,
@@ -52,6 +53,7 @@ class AVITTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final String? Function(String?)? validator;
+  final ValueChanged<String?>? onSaved;
   final String? errorText;
   final bool autocorrect;
   final TextCapitalization textCapitalization;
@@ -122,6 +124,7 @@ class _AVITTextFieldState extends State<AVITTextField> {
           ),
           onChanged: widget.onChanged,
           onFieldSubmitted: widget.onSubmitted,
+          onSaved: widget.onSaved,
           validator: widget.validator ??
               (widget.required
                   ? (String? v) =>
@@ -260,6 +263,7 @@ class AVITDropdown<T> extends StatelessWidget {
     required this.onChanged,
     this.required = false,
     this.hint,
+    this.validator,
   });
 
   final String label;
@@ -268,6 +272,7 @@ class AVITDropdown<T> extends StatelessWidget {
   final ValueChanged<T?> onChanged;
   final bool required;
   final String? hint;
+  final String? Function(T?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -291,6 +296,7 @@ class AVITDropdown<T> extends StatelessWidget {
           initialValue: value,
           items: items,
           onChanged: onChanged,
+          validator: validator,
           // Sizes to the available width instead of the widest option,
           // which would overflow narrow layouts.
           isExpanded: true,

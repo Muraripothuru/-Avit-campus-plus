@@ -335,6 +335,22 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Locally saved, unfinished campus service request draft.
+  Map<String, Object?>? _serviceRequestDraft;
+
+  Map<String, Object?>? get serviceRequestDraft => _serviceRequestDraft;
+
+  void saveServiceRequestDraft(Map<String, Object?> draft) {
+    _serviceRequestDraft = Map<String, Object?>.unmodifiable(draft);
+    notifyListeners();
+  }
+
+  void clearServiceRequestDraft() {
+    if (_serviceRequestDraft == null) return;
+    _serviceRequestDraft = null;
+    notifyListeners();
+  }
+
   void toggleEventFavourite(String eventId) {
     // Demonstrates setState-style local state via the shared notifier.
     if (!_favouriteEvents.add(eventId)) _favouriteEvents.remove(eventId);

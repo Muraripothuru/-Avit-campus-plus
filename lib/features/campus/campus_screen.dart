@@ -103,6 +103,8 @@ class _CampusScreenState extends State<CampusScreen>
               'Scan any AVIT pass', AVITStatusTone.info),
         ],
         'On Campus': <_Service>[
+          _Service('Service Request', Icons.edit_note_rounded,
+              Routes.serviceRequest, 'Ask any campus unit', AVITStatusTone.brand),
           _Service('Smart Queue', Icons.hourglass_top_rounded, Routes.smartQueue,
               'Skip the waiting line', AVITStatusTone.info),
           _Service('Campus Map', Icons.map_rounded, Routes.campusMap,

@@ -140,6 +140,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           AVITSectionHeader(
             title: 'Quick Services',
             subtitle: 'Everything you use on campus',
+            actionLabel: 'New request',
+            onAction: () =>
+                Navigator.pushNamed(context, Routes.serviceRequest),
           ),
           _QuickServices(announcements: _announcements.length),
           const SizedBox(height: AppSpacing.lg),

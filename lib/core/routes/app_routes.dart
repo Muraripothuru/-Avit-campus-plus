@@ -28,6 +28,7 @@ abstract final class Routes {
 
   // Campus services
   static const String gatePass = '/gate-pass';
+  static const String serviceRequest = '/service-request';
   static const String transport = '/transport';
   static const String visitorPass = '/visitor-pass';
   static const String smartQueue = '/smart-queue';
@@ -70,6 +71,7 @@ abstract final class Routes {
     examinations,
     academicCalendar,
     gatePass,
+    serviceRequest,
     transport,
     visitorPass,
     smartQueue,

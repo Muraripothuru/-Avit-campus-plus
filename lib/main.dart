@@ -29,6 +29,7 @@ import 'features/campus_services/gate_pass_screen.dart';
 import 'features/campus_services/hostel_screen.dart';
 import 'features/campus_services/library_screen.dart';
 import 'features/campus_services/smart_queue_screen.dart';
+import 'features/campus_services/service_request_screen.dart';
 import 'features/campus_services/transport_screen.dart';
 import 'features/campus_services/visitor_pass_screen.dart';
 import 'features/safety/complaints_screen.dart';
@@ -141,6 +142,7 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
 
       // Campus services
       Routes.gatePass => const GatePassScreen(),
+      Routes.serviceRequest => const ServiceRequestScreen(),
       Routes.transport => const TransportScreen(),
       Routes.visitorPass => const VisitorPassScreen(),
       Routes.smartQueue => const SmartQueueScreen(),

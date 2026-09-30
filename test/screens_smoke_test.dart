@@ -27,6 +27,7 @@ import 'package:avit_campus_plus/features/campus_services/gate_pass_screen.dart'
 import 'package:avit_campus_plus/features/campus_services/hostel_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/library_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/smart_queue_screen.dart';
+import 'package:avit_campus_plus/features/campus_services/service_request_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/transport_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/visitor_pass_screen.dart';
 import 'package:avit_campus_plus/features/dashboard/dashboard_screen.dart';
@@ -216,6 +217,12 @@ void main() {
         (Routes.library, 'library', () => screenOf(LibraryScreen), student),
         (Routes.cafeteria, 'cafeteria', () => screenOf(CafeteriaScreen), student),
         (Routes.hostel, 'hostel', () => screenOf(HostelScreen), student),
+        (
+          Routes.serviceRequest,
+          'service request form',
+          () => screenOf(ServiceRequestScreen),
+          student,
+        ),
 
         // Safety + account
         (Routes.emergency, 'emergency', () => screenOf(EmergencyScreen), student),
