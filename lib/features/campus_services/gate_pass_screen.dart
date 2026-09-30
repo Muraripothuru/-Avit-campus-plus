@@ -51,8 +51,9 @@ class _GatePassScreenState extends State<GatePassScreen> {
     });
     try {
       final AppUser? me = AppScope.of(context).state.user;
-      final List<GatePass> rows =
-          await deps.gatePasses.myPasses(me?.studentId ?? '');
+      final List<GatePass> rows = await deps.gatePasses.myPasses(
+        me?.studentId ?? '',
+      );
       if (!mounted) return;
       setState(() {
         _passes = rows;
@@ -74,12 +75,10 @@ class _GatePassScreenState extends State<GatePassScreen> {
   }
 
   List<GatePass> get _visible => switch (_filter) {
-    'Pending' => _passes
-        .where((GatePass p) => p.status == PassStatus.pending)
-        .toList(),
-    'Approved' => _passes
-        .where((GatePass p) => p.status == PassStatus.approved)
-        .toList(),
+    'Pending' =>
+      _passes.where((GatePass p) => p.status == PassStatus.pending).toList(),
+    'Approved' =>
+      _passes.where((GatePass p) => p.status == PassStatus.approved).toList(),
     'History' => _passes.where((GatePass p) => p.status.isTerminal).toList(),
     _ => _passes,
   };
@@ -102,71 +101,67 @@ class _GatePassScreenState extends State<GatePassScreen> {
       body: _loading
           ? const LoadingList(itemCount: 4)
           : _error != null
-              ? AVITErrorState(message: _error!, onRetry: _load)
-              : AVITRefresh(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: AppSpacing.screenPadding,
-                    children: <Widget>[
-                      SizedBox(
-                        height: 36,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _filters.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(width: AppSpacing.sm),
-                          itemBuilder: (BuildContext context, int index) {
-                            final bool selected = _filters[index] == _filter;
-                            return ChoiceChip(
-                              label: Text(_filters[index]),
-                              selected: selected,
-                              onSelected: (_) =>
-                                  setState(() => _filter = _filters[index]),
-                              selectedColor: AppColors.lightBlue,
-                              labelStyle: text.labelMedium?.copyWith(
-                                color:
-                                    selected ? AppColors.primaryBlue : null,
-                                fontWeight: selected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                              ),
-                              side: BorderSide(
-                                color: selected
-                                    ? AppColors.primaryBlue
-                                    : AppColors.border,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppRadius.pillShape,
-                              ),
-                            );
-                          },
+          ? AVITErrorState(message: _error!, onRetry: _load)
+          : AVITRefresh(
+              onRefresh: _load,
+              child: ListView(
+                padding: AppSpacing.screenPadding,
+                children: <Widget>[
+                  SizedBox(
+                    height: 36,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _filters.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(width: AppSpacing.sm),
+                      itemBuilder: (BuildContext context, int index) {
+                        final bool selected = _filters[index] == _filter;
+                        return ChoiceChip(
+                          label: Text(_filters[index]),
+                          selected: selected,
+                          onSelected: (_) =>
+                              setState(() => _filter = _filters[index]),
+                          selectedColor: AppColors.lightBlue,
+                          labelStyle: text.labelMedium?.copyWith(
+                            color: selected ? AppColors.primaryBlue : null,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                          side: BorderSide(
+                            color: selected
+                                ? AppColors.primaryBlue
+                                : AppColors.border,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.pillShape,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (_visible.isEmpty)
+                    AVITEmptyState(
+                      title: 'No passes in "$_filter"',
+                      message: 'Tap “New pass” to request permission to leave campus.',
+                      icon: Icons.qr_code_rounded,
+                      actionLabel: 'New pass',
+                      onAction: _showCreateSheet,
+                    )
+                  else
+                    for (final GatePass pass in _visible)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: _PassCard(
+                          pass: pass,
+                          onShowQr: () => _showQr(pass),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      if (_visible.isEmpty)
-                        AVITEmptyState(
-                          title: 'No passes in "$_filter"',
-                          message:
-                              'Tap “New pass” to request permission to leave campus.',
-                          icon: Icons.qr_code_rounded,
-                          actionLabel: 'New pass',
-                          onAction: _showCreateSheet,
-                        )
-                      else
-                        for (final GatePass pass in _visible)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.sm,
-                            ),
-                            child: _PassCard(
-                              pass: pass,
-                              onShowQr: () => _showQr(pass),
-                            ),
-                          ),
-                      const SizedBox(height: 88),
-                    ],
-                  ),
-                ),
+                  const SizedBox(height: 88),
+                ],
+              ),
+            ),
     );
   }
 
@@ -264,8 +259,8 @@ class _PassCard extends StatelessWidget {
                 icon: pass.status == PassStatus.approved
                     ? Icons.verified_rounded
                     : pass.status == PassStatus.pending
-                        ? Icons.hourglass_top_rounded
-                        : Icons.info_outline_rounded,
+                    ? Icons.hourglass_top_rounded
+                    : Icons.info_outline_rounded,
                 compact: true,
               ),
               const SizedBox(width: 6),
@@ -284,25 +279,44 @@ class _PassCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(pass.reason, style: text.titleSmall),
           const SizedBox(height: 4),
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
-              const Icon(Icons.logout_rounded, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                Formatters.dayShort.format(pass.outAt),
-                style: text.bodySmall,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const Icon(Icons.logout_rounded, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    Formatters.dayShort.format(pass.outAt),
+                    style: text.bodySmall,
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              const Icon(Icons.login_rounded, size: 14),
-              const SizedBox(width: 4),
-              Text(Formatters.dayShort.format(pass.inBy), style: text.bodySmall),
-              const SizedBox(width: 10),
-              const Icon(Icons.schedule_rounded, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                '${Formatters.time.format(pass.outAt)} – '
-                '${Formatters.time.format(pass.inBy)}',
-                style: text.bodySmall,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const Icon(Icons.login_rounded, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    Formatters.dayShort.format(pass.inBy),
+                    style: text.bodySmall,
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const Icon(Icons.schedule_rounded, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${Formatters.time.format(pass.outAt)} – '
+                    '${Formatters.time.format(pass.inBy)}',
+                    style: text.bodySmall,
+                  ),
+                ],
               ),
             ],
           ),
@@ -416,7 +430,11 @@ class _CreateGatePassFormState extends State<_CreateGatePassForm> {
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      showAVITSnackBar(context, message: e.userMessage, tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: e.userMessage,
+        tone: AVITSnackTone.error,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -466,11 +484,8 @@ class _CreateGatePassFormState extends State<_CreateGatePassForm> {
               controller: _destination,
               required: true,
               maxLength: 80,
-              validator: (String? v) => Validators.safeText(
-                v,
-                field: 'Destination',
-                maxLength: 80,
-              ),
+              validator: (String? v) =>
+                  Validators.safeText(v, field: 'Destination', maxLength: 80),
             ),
             const SizedBox(height: AppSpacing.md),
             Row(

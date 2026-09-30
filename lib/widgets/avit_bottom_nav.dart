@@ -34,7 +34,11 @@ class AVITBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final int unread = AppScope.of(context).state.deps.localStore.unreadNotifications;
+    final int unread = AppScope.of(context)
+        .state
+        .deps
+        .localStore
+        .unreadNotifications;
 
     return Container(
       decoration: BoxDecoration(
@@ -54,8 +58,8 @@ class AVITBottomNavigation extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 64,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 64),
           child: Row(
             children: <Widget>[
               for (int i = 0; i < AppTab.values.length; i++)
@@ -94,8 +98,7 @@ class _NavTab extends StatefulWidget {
   State<_NavTab> createState() => _NavTabState();
 }
 
-class _NavTabState extends State<_NavTab>
-    with SingleTickerProviderStateMixin {
+class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 240),
@@ -112,9 +115,7 @@ class _NavTabState extends State<_NavTab>
   void didUpdateWidget(covariant _NavTab old) {
     super.didUpdateWidget(old);
     if (old.selected != widget.selected) {
-      widget.selected
-          ? _controller.forward()
-          : _controller.reverse();
+      widget.selected ? _controller.forward() : _controller.reverse();
     }
   }
 
@@ -144,46 +145,50 @@ class _NavTabState extends State<_NavTab>
           animation: _controller,
           builder: (BuildContext context, Widget? _) {
             final double t = _controller.value;
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10 + 4 * t,
-                    vertical: 5 - 1 * t,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Color.lerp(
-                      Colors.transparent,
-                      AppColors.lightBlue,
-                      t,
+            return ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 64),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10 + 4 * t,
+                      vertical: 5 - 1 * t,
                     ),
-                    borderRadius: AppRadius.pillShape,
+                    decoration: BoxDecoration(
+                      color: Color.lerp(
+                        Colors.transparent,
+                        AppColors.lightBlue,
+                        t,
+                      ),
+                      borderRadius: AppRadius.pillShape,
+                    ),
+                    child: Badge(
+                      isLabelVisible: widget.badge > 0,
+                      label: Text('${widget.badge}'),
+                      backgroundColor: AppColors.danger,
+                      child: Icon(
+                        widget.tab.icon,
+                        size: 22,
+                        color: Color.lerp(inactive, active, t),
+                      ),
+                    ),
                   ),
-                  child: Badge(
-                    isLabelVisible: widget.badge > 0,
-                    label: Text('${widget.badge}'),
-                    backgroundColor: AppColors.danger,
-                    child: Icon(
-                      widget.tab.icon,
-                      size: 22,
+                  const SizedBox(height: 3),
+                  Text(
+                    widget.tab.label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: widget.selected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: Color.lerp(inactive, active, t),
                     ),
                   ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  widget.tab.label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: widget.selected
-                        ? FontWeight.w700
-                        : FontWeight.w500,
-                    color: Color.lerp(inactive, active, t),
-                  ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),

@@ -43,8 +43,8 @@ class AVITCard extends StatelessWidget {
         gradient: gradient,
         borderRadius: radius,
         border: Border.all(
-          color: borderColor ??
-              (isDark ? AppColors.darkBorder : AppColors.border),
+          color:
+              borderColor ?? (isDark ? AppColors.darkBorder : AppColors.border),
         ),
         boxShadow: elevation > 0 ? AppShadow.raised : AppShadow.subtle,
       ),
@@ -57,11 +57,7 @@ class AVITCard extends StatelessWidget {
     if (onTap == null) return surface;
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: surface,
-      ),
+      child: InkWell(onTap: onTap, borderRadius: radius, child: surface),
     );
   }
 }
@@ -115,8 +111,8 @@ class _AVITAnimatedCardState extends State<AVITAnimatedCard> {
           curve: Curves.easeOut,
           padding: widget.padding,
           decoration: BoxDecoration(
-            color: widget.color ??
-                (isDark ? AppColors.darkCard : AppColors.white),
+            color:
+                widget.color ?? (isDark ? AppColors.darkCard : AppColors.white),
             borderRadius: AppRadius.card,
             border: Border.all(
               color: isDark ? AppColors.darkBorder : AppColors.border,
@@ -177,10 +173,7 @@ class AVITSectionHeader extends StatelessWidget {
             ),
           ),
           if (actionLabel != null)
-            TextButton(
-              onPressed: onAction,
-              child: Text(actionLabel!),
-            ),
+            TextButton(onPressed: onAction, child: Text(actionLabel!)),
         ],
       ),
     );
@@ -225,19 +218,16 @@ class AVITStatusChip extends StatelessWidget {
         color: isDark ? bg.withValues(alpha: 0.18) : bg,
         borderRadius: AppRadius.pillShape,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 2,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
-          if (icon != null) ...<Widget>[
-            Icon(icon, size: compact ? 12 : 14, color: fg),
-            const SizedBox(width: 4),
-          ],
+          if (icon != null) Icon(icon, size: compact ? 12 : 14, color: fg),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: fg, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -293,9 +283,8 @@ class AVITMetricTile extends StatelessWidget {
               children: <Widget>[
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Text(label, style: Theme.of(context).textTheme.bodySmall),
               ],

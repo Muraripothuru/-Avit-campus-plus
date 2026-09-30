@@ -73,16 +73,19 @@ class _AVITTextFieldState extends State<AVITTextField> {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Text(
-              widget.label,
-              style: Theme.of(context).textTheme.labelLarge,
+            Flexible(
+              child: Text(
+                widget.label,
+                style: Theme.of(context).textTheme.labelLarge,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             if (widget.required)
               Text(
                 ' *',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.danger,
-                ),
+                style: Theme.of(context).textTheme.labelLarge
+                    ?.copyWith(color: AppColors.danger),
               ),
           ],
         ),
@@ -125,10 +128,11 @@ class _AVITTextFieldState extends State<AVITTextField> {
           onChanged: widget.onChanged,
           onFieldSubmitted: widget.onSubmitted,
           onSaved: widget.onSaved,
-          validator: widget.validator ??
+          validator:
+              widget.validator ??
               (widget.required
                   ? (String? v) =>
-                      (v == null || v.trim().isEmpty) ? 'Required' : null
+                        (v == null || v.trim().isEmpty) ? 'Required' : null
                   : null),
         ),
       ],
@@ -206,9 +210,7 @@ class _AVITButtonState extends State<AVITButton> {
 
     final Widget scaled = GestureDetector(
       onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
-      onTapUp: enabled
-          ? (_) => setState(() => _pressed = false)
-          : null,
+      onTapUp: enabled ? (_) => setState(() => _pressed = false) : null,
       onTapCancel: enabled ? () => setState(() => _pressed = false) : null,
       child: AnimatedScale(
         scale: _pressed ? 0.97 : 1,
@@ -230,22 +232,18 @@ class _AVITButtonState extends State<AVITButton> {
       return const SizedBox(
         width: 20,
         height: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.4,
-          color: Colors.white,
-        ),
+        child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
       );
     }
     final List<Widget> children = <Widget>[
-      if (widget.icon != null) ...<Widget>[
-        Icon(widget.icon, size: widget.compact ? 16 : 18),
-        const SizedBox(width: 8),
-      ],
-      Text(widget.label),
+      if (widget.icon != null) Icon(widget.icon, size: widget.compact ? 16 : 18),
+      Text(widget.label, textAlign: TextAlign.center),
     ];
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: children,
     );
   }
@@ -281,13 +279,19 @@ class AVITDropdown<T> extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Text(label, style: Theme.of(context).textTheme.labelLarge),
+            Flexible(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             if (required)
               Text(
                 ' *',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.danger,
-                ),
+                style: Theme.of(context).textTheme.labelLarge
+                    ?.copyWith(color: AppColors.danger),
               ),
           ],
         ),

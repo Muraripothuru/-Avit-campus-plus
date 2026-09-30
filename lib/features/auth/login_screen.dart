@@ -278,15 +278,19 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: <Widget>[
                       Checkbox(
                         value: _remember,
                         onChanged: (bool? v) =>
                             setState(() => _remember = v ?? false),
                       ),
-                      const Text('Remember me'),
-                      const Spacer(),
+                      Text(
+                        'Remember me',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       TextButton(
                         onPressed: () =>
                             Navigator.pushNamed(context, Routes.forgotPassword),
@@ -313,7 +317,13 @@ class _LoginScreenState extends State<LoginScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Text('New to AVIT Campus+?', style: text.bodySmall),
+                      Flexible(
+                        child: Text(
+                          'New to AVIT Campus+?',
+                          style: text.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       TextButton(
                         onPressed: () => Navigator.pushReplacementNamed(
                           context,

@@ -163,7 +163,7 @@ class _DrawerHeader extends StatelessWidget {
     final AppUser? u = user;
 
     return Container(
-      height: height,
+      constraints: BoxConstraints(minHeight: height),
       width: double.infinity,
       decoration: const BoxDecoration(gradient: AppColors.heroGradient),
       child: Padding(
@@ -308,28 +308,31 @@ class _DrawerTile extends StatelessWidget {
         color: selected ? AppColors.lightBlue : Colors.transparent,
         borderRadius: AppRadius.small,
       ),
-      child: ListTile(
-        dense: true,
-        leading: Icon(
-          item.icon,
-          size: 21,
-          color: selected ? AppColors.primaryBlue : null,
-        ),
-        title: Text(
-          item.label,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          dense: true,
+          leading: Icon(
+            item.icon,
+            size: 21,
             color: selected ? AppColors.primaryBlue : null,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           ),
+          title: Text(
+            item.label,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: selected ? AppColors.primaryBlue : null,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+          trailing: selected
+              ? const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: AppColors.primaryBlue,
+                )
+              : null,
+          onTap: onTap,
         ),
-        trailing: selected
-            ? const Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: AppColors.primaryBlue,
-              )
-            : null,
-        onTap: onTap,
       ),
     );
   }
