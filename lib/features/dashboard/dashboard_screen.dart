@@ -18,6 +18,7 @@ import '../../widgets/avit_charts.dart';
 import '../../widgets/avit_content_cards.dart';
 import '../../widgets/avit_feedback.dart';
 import '../../widgets/avit_inputs.dart';
+import '../../widgets/avit_motion.dart';
 
 /// Student home dashboard: greeting, today's schedule, attendance, quick
 /// services, announcements and upcoming events.
@@ -319,26 +320,20 @@ class _GreetingHeader extends StatelessWidget {
     final TextTheme text = Theme.of(context).textTheme;
     final DateTime now = DateTime.now();
 
-    return AVITCard(
-      padding: EdgeInsets.zero,
-      borderColor: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: AppRadius.card,
-        child: Stack(
-          children: <Widget>[
-            Positioned.fill(
-              child: Image.asset(
-                'assets/images/college.png',
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox.expand(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: AppColors.heroGradient,
-                    ),
-                  ),
+    return AVITFadeUp(
+      child: AVITCard(
+        padding: EdgeInsets.zero,
+        borderColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: AppRadius.card,
+          child: SizedBox(
+            height: 190,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Positioned.fill(
+                  child: _KenBurnsPhoto(asset: 'assets/images/college.png'),
                 ),
-              ),
-            ),
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -353,10 +348,14 @@ class _GreetingHeader extends StatelessWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: AppSpacing.cardPadding,
-              child: Row(
-                children: <Widget>[
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Padding(
+                padding: AppSpacing.cardPadding,
+                child: Row(
+                  children: <Widget>[
           Container(
             width: 56,
             height: 56,
@@ -494,10 +493,13 @@ class _GreetingHeader extends StatelessWidget {
             ],
           ),
         ),
-      ],
+      ),
+    ],
     ),
   ),
-);
+),
+      ),
+    );
   }
 
   static String _short(String value) {
@@ -512,6 +514,54 @@ class _GreetingHeader extends StatelessWidget {
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
+  }
+}
+
+/// Slow Ken Burns pan/zoom over the campus photo behind the greeting.
+class _KenBurnsPhoto extends StatefulWidget {
+  const _KenBurnsPhoto({required this.asset});
+
+  final String asset;
+
+  @override
+  State<_KenBurnsPhoto> createState() => _KenBurnsPhotoState();
+}
+
+class _KenBurnsPhotoState extends State<_KenBurnsPhoto>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 9),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, Widget? _) {
+        final double t = Curves.easeInOut.transform(_controller.value);
+        return Transform.scale(
+          scale: 1.03 + 0.10 * t,
+          child: Image.asset(
+            widget.asset,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (_, _, _) => const SizedBox.expand(
+              child: DecoratedBox(
+                decoration: BoxDecoration(gradient: AppColors.heroGradient),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -532,16 +582,18 @@ class _AcademicSnapshot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-      constraints: const BoxConstraints(maxWidth: 640),
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Wrap(
+    return AVITFadeUp(
+      delay: const Duration(milliseconds: 150),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+        constraints: const BoxConstraints(maxWidth: 640),
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Wrap(
         spacing: AppSpacing.sm,
         runSpacing: AppSpacing.sm,
         alignment: WrapAlignment.spaceBetween,
@@ -581,7 +633,8 @@ class _AcademicSnapshot extends StatelessWidget {
                 ? 'No classes scheduled for today.'
                 : '$classesToday classes are scheduled for today.',
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -870,19 +923,25 @@ class _QuickServices extends StatelessWidget {
       childAspectRatio: 0.82,
       children: <Widget>[
         for (final (
-              IconData icon,
-              String label,
-              String route,
-              AVITStatusTone tone,
-              String image,
+              int i,
+              (
+                IconData icon,
+                String label,
+                String route,
+                AVITStatusTone tone,
+                String image,
+              ),
             )
-            in _services)
-          AVITServiceCard(
-            title: label,
-            icon: icon,
-            tone: tone,
-            imageAsset: image,
-            onTap: () => Navigator.pushNamed(context, route),
+            in _services.indexed)
+          AVITFadeUp(
+            delay: Duration(milliseconds: 70 * i),
+            child: AVITServiceCard(
+              title: label,
+              icon: icon,
+              tone: tone,
+              imageAsset: image,
+              onTap: () => Navigator.pushNamed(context, route),
+            ),
           ),
       ],
     );
