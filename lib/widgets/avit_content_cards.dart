@@ -46,52 +46,41 @@ class AVITServiceCard extends StatelessWidget {
     if (imageAsset != null) {
       return AVITAnimatedCard(
         onTap: onTap,
-        padding: EdgeInsets.zero,
-        child: ClipRRect(
-          borderRadius: AppRadius.card,
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              Image.asset(
-                imageAsset!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  color: accent.withValues(alpha: 0.12),
-                  alignment: Alignment.center,
-                  child: Icon(icon, color: accent, size: 28),
-                ),
-              ),
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: <Color>[Colors.transparent, Color(0x99000000)],
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 6,
-                right: 6,
-                bottom: 6,
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.labelMedium?.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w800,
-                    shadows: <Shadow>[
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        blurRadius: 4,
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final double imageHeight =
+                ((constraints.maxHeight - 36) * 0.72).clamp(40.0, 88.0);
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Expanded(
+                  child: Center(
+                    child: SizedBox(
+                      height: imageHeight,
+                      width: double.infinity,
+                      child: Image.asset(
+                        imageAsset!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) =>
+                            Icon(icon, color: accent, size: 30),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: text.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       );
     }
