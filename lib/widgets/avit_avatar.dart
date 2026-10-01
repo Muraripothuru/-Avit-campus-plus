@@ -17,26 +17,70 @@ export '../core/media/avatar_photo.dart'
 /// to travel through `avatarUrl`, and the account stays serialisable.
 const String kAvatarScheme = 'avit://avatar/';
 
-/// One selectable profile picture: an icon on a tinted disc.
-class AvatarPreset {
-  const AvatarPreset(this.icon, this.color);
+/// The only preset offered: the generic person silhouette drawn by
+/// [AvatarSilhouette]. Order is part of the contract — the index is what gets
+/// persisted, so the single preset stays at index 0.
+const int kAvatarPresetCount = 1;
 
-  final IconData icon;
-  final Color color;
+/// Pale disc and mid-grey person of the "no picture yet" avatar.
+const Color kSilhouetteDisc = Color(0xFFE4E4E4);
+const Color kSilhouetteFigure = Color(0xFFA6A6A6);
+
+/// The silhouette preset, drawn to scale rather than picked from an icon font
+/// so it matches the reference artwork at any diameter.
+class AvatarSilhouette extends StatelessWidget {
+  const AvatarSilhouette({super.key, required this.size, this.ring});
+
+  /// Diameter of the disc.
+  final double size;
+
+  /// Selection ring, painted over the disc when a screen needs one.
+  final Border? ring;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _SilhouettePainter(ring: ring),
+    );
+  }
 }
 
-/// The presets offered on the edit-profile screen. Order is part of the
-/// contract: the index is what gets persisted.
-const List<AvatarPreset> kAvatarPresets = <AvatarPreset>[
-  AvatarPreset(Icons.auto_awesome_rounded, Color(0xFF1E4FD8)),
-  AvatarPreset(Icons.pets_rounded, Color(0xFF12924F)),
-  AvatarPreset(Icons.music_note_rounded, Color(0xFF7C3AED)),
-  AvatarPreset(Icons.sports_basketball_rounded, Color(0xFFF0A11A)),
-  AvatarPreset(Icons.local_fire_department_rounded, Color(0xFFD92D3F)),
-  AvatarPreset(Icons.camera_alt_rounded, Color(0xFF2E7BE5)),
-  AvatarPreset(Icons.brush_rounded, Color(0xFFDB2777)),
-  AvatarPreset(Icons.code_rounded, Color(0xFF0F766E)),
-];
+class _SilhouettePainter extends CustomPainter {
+  const _SilhouettePainter({this.ring});
+
+  final Border? ring;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double r = size.shortestSide / 2;
+    final Offset c = Offset(size.width / 2, size.height / 2);
+
+    canvas.drawCircle(c, r, Paint()..color = kSilhouetteDisc);
+
+    // The shoulders are a wide circle sitting mostly below the disc, so only
+    // its dome shows — and only where the disc allows.
+    canvas.save();
+    canvas.clipPath(Path()..addOval(Rect.fromCircle(center: c, radius: r)));
+    canvas.drawCircle(
+      c.translate(0, 1.044 * r),
+      0.654 * r,
+      Paint()..color = kSilhouetteFigure,
+    );
+    canvas.drawCircle(
+      c.translate(0, -0.05 * r),
+      0.35 * r,
+      Paint()..color = kSilhouetteFigure,
+    );
+    canvas.restore();
+
+    ring?.paint(canvas, Offset.zero & size);
+  }
+
+  @override
+  bool shouldRepaint(_SilhouettePainter oldDelegate) =>
+      oldDelegate.ring != ring;
+}
 
 /// Preset index encoded in [avatarUrl], or null when it is not a preset.
 int? avatarPresetIndex(String? avatarUrl) {
@@ -44,7 +88,7 @@ int? avatarPresetIndex(String? avatarUrl) {
   final int? index = int.tryParse(
     avatarUrl.substring(kAvatarScheme.length).trim(),
   );
-  if (index == null || index < 0 || index >= kAvatarPresets.length) return null;
+  if (index == null || index < 0 || index >= kAvatarPresetCount) return null;
   return index;
 }
 
@@ -76,29 +120,7 @@ class AVITAvatar extends StatelessWidget {
     final double diameter = radius * 2;
 
     if (preset != null) {
-      final AvatarPreset spec = kAvatarPresets[preset];
-      return Container(
-        width: diameter,
-        height: diameter,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: onDark
-              ? AppColors.white.withValues(alpha: 0.18)
-              : spec.color.withValues(alpha: 0.16),
-          border: onDark
-              ? Border.all(
-                  color: AppColors.white.withValues(alpha: 0.5),
-                  width: 1.5,
-                )
-              : Border.all(color: spec.color.withValues(alpha: 0.45)),
-        ),
-        alignment: Alignment.center,
-        child: Icon(
-          spec.icon,
-          size: radius,
-          color: onDark ? AppColors.white : spec.color,
-        ),
-      );
+      return AvatarSilhouette(size: diameter);
     }
 
     final String url = user.avatarUrl ?? '';

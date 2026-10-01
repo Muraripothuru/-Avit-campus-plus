@@ -224,13 +224,13 @@ void main() {
           fullName: 'Arun K',
           phone: '9000000000',
           email: 'attacker@example.com',
-          avatarUrl: 'avit://avatar/3',
+          avatarUrl: 'avit://avatar/0',
         ),
       );
 
       expect(edited.fullName, 'Arun K');
       expect(edited.phone, '9000000000');
-      expect(edited.avatarUrl, 'avit://avatar/3');
+      expect(edited.avatarUrl, 'avit://avatar/0');
       expect(
         edited.email,
         student,
@@ -488,12 +488,12 @@ void main() {
         findsOneWidget,
       );
 
-      final Finder choice = find.byIcon(kAvatarPresets[3].icon);
+      final Finder choice = find.byType(AvatarSilhouette);
       expect(choice, findsOneWidget, reason: 'no picture is selected yet');
       await tester.tap(choice);
       await pumpFrames(tester, count: 4);
       expect(
-        find.byIcon(kAvatarPresets[3].icon),
+        find.byType(AvatarSilhouette),
         findsNWidgets(2),
         reason: 'the preview above the grid reflects the tap immediately',
       );
@@ -510,11 +510,11 @@ void main() {
       await tester.tap(save);
       await pumpFrames(tester, count: 10);
 
-      expect(state.user?.avatarUrl, 'avit://avatar/3');
+      expect(state.user?.avatarUrl, 'avit://avatar/0');
 
       // Back on the dashboard the greeting tile and the app bar carry the
       // picture now, without navigating anywhere new.
-      final int before = find.byIcon(kAvatarPresets[3].icon).evaluate().length;
+      final int before = find.byType(AvatarSilhouette).evaluate().length;
       expect(
         before,
         greaterThanOrEqualTo(2),
@@ -525,7 +525,7 @@ void main() {
       await tester.tap(find.byTooltip('Open menu').first);
       await pumpFrames(tester, count: 8);
       expect(
-        find.byIcon(kAvatarPresets[3].icon).evaluate().length,
+        find.byType(AvatarSilhouette).evaluate().length,
         before + 1,
         reason: 'the drawer header joins them',
       );

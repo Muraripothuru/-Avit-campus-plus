@@ -133,10 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 const SizedBox(width: AppSpacing.md),
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: (constraints.maxWidth * 0.55).clamp(
-                      140.0,
-                      240.0,
-                    ),
+                    maxWidth: (constraints.maxWidth * 0.55).clamp(140.0, 240.0),
                   ),
                   child: _AttendanceCard(percentage: _attendance),
                 ),
@@ -390,11 +387,7 @@ class _GreetingHeader extends StatelessWidget {
                           ],
                         ),
                         child: picture != null
-                            ? Icon(
-                                kAvatarPresets[picture].icon,
-                                color: AppColors.white,
-                                size: 26,
-                              )
+                            ? const AvatarSilhouette(size: 34)
                             : isAvatarPhoto(user?.avatarUrl)
                             ? ClipOval(
                                 child: AvatarPhotoImage(

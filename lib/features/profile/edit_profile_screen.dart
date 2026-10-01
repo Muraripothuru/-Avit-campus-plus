@@ -220,14 +220,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           selected: hasPhoto,
                           onTap: _pickPhoto,
                         ),
-                        for (int i = 0; i < kAvatarPresets.length; i++)
-                          _AvatarChoice(
-                            preset: kAvatarPresets[i],
-                            selected: preset == i,
-                            onTap: () => setState(
-                              () => _avatarValue = avatarValueFor(i),
-                            ),
-                          ),
+                        _PresetChoice(
+                          selected: !hasPhoto && preset != null,
+                          onTap: () =>
+                              setState(() => _avatarValue = avatarValueFor(0)),
+                        ),
                         _InitialsChoice(
                           selected: !hasPhoto && preset == null,
                           label: user.fullName,
@@ -388,14 +385,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 }
 
-class _AvatarChoice extends StatelessWidget {
-  const _AvatarChoice({
-    required this.preset,
-    required this.selected,
-    required this.onTap,
-  });
+class _PresetChoice extends StatelessWidget {
+  const _PresetChoice({required this.selected, required this.onTap});
 
-  final AvatarPreset preset;
   final bool selected;
   final VoidCallback onTap;
 
@@ -407,21 +399,14 @@ class _AvatarChoice extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: <Widget>[
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: preset.color.withValues(alpha: 0.16),
-              border: Border.all(
-                color: selected
-                    ? preset.color
-                    : preset.color.withValues(alpha: 0.3),
-                width: selected ? 2.5 : 1,
-              ),
+          AvatarSilhouette(
+            size: 56,
+            ring: Border.all(
+              color: selected
+                  ? AppColors.royalBlue
+                  : AppColors.royalBlue.withValues(alpha: 0.3),
+              width: selected ? 2.5 : 1,
             ),
-            alignment: Alignment.center,
-            child: Icon(preset.icon, color: preset.color, size: 24),
           ),
           if (selected)
             Positioned(
@@ -431,7 +416,7 @@ class _AvatarChoice extends StatelessWidget {
                 width: 20,
                 height: 20,
                 decoration: BoxDecoration(
-                  color: preset.color,
+                  color: AppColors.royalBlue,
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.white, width: 2),
                 ),
