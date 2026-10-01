@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/constants/app_constants.dart';
+import '../core/media/avatar_photo.dart';
+import '../core/media/gallery_photo_source.dart';
 import '../core/security/audit_log.dart';
 import '../core/security/secure_store.dart';
 import '../core/services/biometric_service.dart';
@@ -43,6 +45,7 @@ class AppDependencies {
     required this.security,
     required this.warden,
     required this.admin,
+    required this.photos,
     required this.isRemote,
   });
 
@@ -64,6 +67,9 @@ class AppDependencies {
   final WardenRepository warden;
   final AdminRepository admin;
 
+  /// Turns a chosen picture into a value the account can store.
+  final AvatarPhotoPicker photos;
+
   final bool isRemote;
 
   /// True when no API base URL was supplied — the app runs against clearly
@@ -71,8 +77,13 @@ class AppDependencies {
   bool get isDemoMode => !isRemote;
 
   /// [secureStore] lets tests inject an in-memory store instead of the
-  /// platform Keystore/Keychain channel.
-  factory AppDependencies({bool? forceRemote, SecureStore? secureStore}) {
+  /// platform Keystore/Keychain channel, and [photoPicker] lets them supply a
+  /// picture without opening the platform photo picker.
+  factory AppDependencies({
+    bool? forceRemote,
+    SecureStore? secureStore,
+    AvatarPhotoPicker? photoPicker,
+  }) {
     final SecureStore store = secureStore ?? PlatformSecureStore();
     final TokenManager tokens = TokenManager(store: store);
     final AuditLog audit = AuditLog();
@@ -165,6 +176,7 @@ class AppDependencies {
       security: security,
       warden: warden,
       admin: admin,
+      photos: photoPicker ?? AvatarPhotoPicker(source: pickFromGalleryPhoto),
       isRemote: remote,
     );
   }

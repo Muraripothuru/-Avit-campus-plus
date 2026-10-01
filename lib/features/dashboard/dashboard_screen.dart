@@ -333,6 +333,13 @@ class _GreetingHeader extends StatelessWidget {
     final int? picture = user == null
         ? null
         : avatarPresetIndex(user!.avatarUrl);
+    final Widget initials = Text(
+      _initials(user?.fullName ?? 'Student'),
+      style: text.titleMedium?.copyWith(
+        color: AppColors.white,
+        fontWeight: FontWeight.w800,
+      ),
+    );
 
     return AVITFadeUp(
       child: AVITCard(
@@ -382,19 +389,21 @@ class _GreetingHeader extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: picture == null
-                            ? Text(
-                                _initials(user?.fullName ?? 'Student'),
-                                style: text.titleMedium?.copyWith(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              )
-                            : Icon(
+                        child: picture != null
+                            ? Icon(
                                 kAvatarPresets[picture].icon,
                                 color: AppColors.white,
                                 size: 26,
-                              ),
+                              )
+                            : isAvatarPhoto(user?.avatarUrl)
+                            ? ClipOval(
+                                child: AvatarPhotoImage(
+                                  dataUri: user!.avatarUrl!,
+                                  size: 34,
+                                  fallback: initials,
+                                ),
+                              )
+                            : initials,
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
@@ -433,7 +442,9 @@ class _GreetingHeader extends StatelessWidget {
                                     borderRadius: AppRadius.pillShape,
                                   ),
                                   child: Text(
-                                    programme.isEmpty ? 'AVIT' : _short(programme),
+                                    programme.isEmpty
+                                        ? 'AVIT'
+                                        : _short(programme),
                                     style: text.labelSmall?.copyWith(
                                       color: AppColors.white,
                                     ),

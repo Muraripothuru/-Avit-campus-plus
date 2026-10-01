@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:image/image.dart' as img;
+
 import 'package:avit_campus_plus/app/app_state.dart';
+import 'package:avit_campus_plus/core/media/avatar_photo.dart';
 import 'package:avit_campus_plus/core/security/secure_store.dart';
 import 'package:avit_campus_plus/core/utils/app_exception.dart';
 import 'package:avit_campus_plus/core/routes/app_routes.dart';
@@ -36,9 +42,13 @@ void main() {
     }
   }
 
-  Future<AppState> boot(WidgetTester tester, {String? email}) async {
+  Future<AppState> boot(
+    WidgetTester tester, {
+    String? email,
+    AvatarPhotoPicker? photos,
+  }) async {
     final AppState state = AppState(
-      AppDependencies(secureStore: InMemorySecureStore()),
+      AppDependencies(secureStore: InMemorySecureStore(), photoPicker: photos),
     );
     await tester.pumpWidget(AvitCampusPlus(state: state));
     await tester.pump();
@@ -522,4 +532,149 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('a student can upload their own picture and it shows everywhere', (
+    WidgetTester tester,
+  ) async {
+    const String tinyPng =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    final AvatarPhotoPicker picker = AvatarPhotoPicker(
+      source: () async => Uint8List.fromList(<int>[0]),
+      encode: (Uint8List _) async => '${kAvatarDataPrefix}png;base64,$tinyPng',
+    );
+
+    final AppState state = await boot(tester, email: student, photos: picker);
+    final Finder shots = find.byWidgetPredicate(
+      (Widget w) => w is Image && w.image is MemoryImage,
+    );
+
+    final NavigatorState nav = tester.state<NavigatorState>(
+      find.byType(Navigator),
+    );
+    nav.pushNamed(Routes.editProfile);
+    await pumpFrames(tester, count: 8);
+    expect(find.byType(EditProfileScreen, skipOffstage: false), findsOneWidget);
+    expect(shots, findsNothing, reason: 'the account still shows initials');
+
+    await tester.tap(find.byTooltip('Upload a photo'));
+    await pumpFrames(tester, count: 6);
+    expect(shots, findsOneWidget, reason: 'the preview adopts it at once');
+    expect(
+      state.user?.avatarUrl ?? '',
+      isNot(contains('data:image')),
+      reason: 'nothing is stored until the form is submitted',
+    );
+
+    final Finder save = find.text('Save changes');
+    final Finder scroller = scrollerUnder(
+      save,
+      find.byType(EditProfileScreen, skipOffstage: false),
+    );
+    await tester.scrollUntilVisible(save, 300, scrollable: scroller);
+    await tester.pump();
+    await tester.ensureVisible(save);
+    await tester.pump();
+    await tester.tap(save);
+    await pumpFrames(tester, count: 10);
+
+    expect(
+      state.user?.avatarUrl ?? '',
+      startsWith('${kAvatarDataPrefix}png;base64,'),
+    );
+    expect(
+      shots.evaluate().length,
+      greaterThanOrEqualTo(2),
+      reason: 'app bar + greeting tile',
+    );
+
+    await tester.tap(find.byTooltip('Open menu').first);
+    await pumpFrames(tester, count: 8);
+    expect(
+      shots.evaluate().length,
+      greaterThanOrEqualTo(3),
+      reason: 'plus the drawer header',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a picture that cannot be read is reported, not swallowed', (
+    WidgetTester tester,
+  ) async {
+    final AvatarPhotoPicker picker = AvatarPhotoPicker(
+      source: () async => Uint8List.fromList(<int>[1, 2, 3]),
+      encode: (Uint8List _) async => null,
+    );
+    final AppState state = await boot(tester, email: student, photos: picker);
+
+    final NavigatorState nav = tester.state<NavigatorState>(
+      find.byType(Navigator),
+    );
+    nav.pushNamed(Routes.editProfile);
+    await pumpFrames(tester, count: 8);
+
+    expect(find.text('Your initials until you pick a picture'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Upload a photo'));
+    await pumpFrames(tester, count: 8);
+
+    expect(
+      find.text("We couldn't read that picture. Please try another one."),
+      findsOneWidget,
+    );
+    expect(state.user?.avatarUrl ?? '', isNot(contains('data:image')));
+    await tester.pump(const Duration(seconds: 4));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an oversized picture is refused with a message', (
+    WidgetTester tester,
+  ) async {
+    final String huge = base64Encode(List<int>.filled(300 * 1024, 0));
+    final AvatarPhotoPicker picker = AvatarPhotoPicker(
+      source: () async => Uint8List.fromList(<int>[0]),
+      encode: (Uint8List _) async => '${kAvatarDataPrefix}jpeg;base64,$huge',
+    );
+    final AppState state = await boot(tester, email: student, photos: picker);
+
+    final NavigatorState nav = tester.state<NavigatorState>(
+      find.byType(Navigator),
+    );
+    nav.pushNamed(Routes.editProfile);
+    await pumpFrames(tester, count: 8);
+
+    await tester.tap(find.byTooltip('Upload a photo'));
+    await pumpFrames(tester, count: 8);
+
+    expect(
+      find.text('That picture is too large. Please pick a smaller one.'),
+      findsOneWidget,
+    );
+    expect(state.user?.avatarUrl ?? '', isNot(contains('data:image')));
+    await tester.pump(const Duration(seconds: 4));
+    expect(tester.takeException(), isNull);
+  });
+
+  test('encodeAvatarPhoto scales a picture down and keeps it small', () async {
+    final img.Image source = img.Image(width: 600, height: 400);
+    for (int y = 0; y < 400; y++) {
+      for (int x = 0; x < 600; x++) {
+        source.setPixelRgb(x, y, x % 256, y % 256, (x + y) % 256);
+      }
+    }
+    final Uint8List original = Uint8List.fromList(img.encodePng(source));
+
+    final String? uri = await encodeAvatarPhoto(original);
+    expect(uri, isNotNull);
+    expect(uri!.startsWith('${kAvatarDataPrefix}jpeg;base64,'), isTrue);
+
+    final Uint8List encoded = base64Decode(uri.substring(uri.indexOf(',') + 1));
+    expect(encoded.lengthInBytes, lessThan(kMaxAvatarPhotoBytes));
+
+    final img.Image? out = img.decodeImage(encoded);
+    expect(out, isNotNull, reason: 'the result is a readable JPEG');
+    expect(out!.width, 512);
+    expect(out.height, 341);
+
+    expect(await encodeAvatarPhoto(Uint8List.fromList(<int>[1, 2, 3])), isNull);
+  });
 }

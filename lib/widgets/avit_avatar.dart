@@ -1,8 +1,15 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
+import '../core/media/avatar_photo.dart';
 import '../core/theme/app_colors.dart';
 import '../core/utils/formatters.dart';
 import '../models/user.dart';
+
+export '../core/media/avatar_photo.dart'
+    show kAvatarDataPrefix, kMaxAvatarPhotoBytes, isAvatarPhoto;
 
 /// Marker scheme for a locally chosen profile picture.
 ///
@@ -95,14 +102,27 @@ class AVITAvatar extends StatelessWidget {
     }
 
     final String url = user.avatarUrl ?? '';
-    if (url.startsWith('http')) {
-      return ClipOval(
-        child: Image.network(
-          url,
-          width: diameter,
-          height: diameter,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _Initials(
+    if (isAvatarPhoto(url)) {
+      return Container(
+        width: diameter,
+        height: diameter,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: onDark
+              ? AppColors.white.withValues(alpha: 0.16)
+              : AppColors.lightBlue,
+          border: Border.all(
+            color: onDark
+                ? AppColors.white.withValues(alpha: 0.5)
+                : AppColors.royalBlue.withValues(alpha: 0.35),
+            width: 1.5,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: AvatarPhotoImage(
+          dataUri: url,
+          size: diameter,
+          fallback: _InitialsText(
             radius: radius,
             name: user.fullName,
             onDark: onDark,
@@ -111,7 +131,92 @@ class AVITAvatar extends StatelessWidget {
       );
     }
 
+    if (url.startsWith('http')) {
+      return ClipOval(
+        child: Image.network(
+          url,
+          width: diameter,
+          height: diameter,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) =>
+              _Initials(radius: radius, name: user.fullName, onDark: onDark),
+        ),
+      );
+    }
+
     return _Initials(radius: radius, name: user.fullName, onDark: onDark);
+  }
+}
+
+/// An uploaded picture, decoded once per distinct value and cached for the
+/// life of the app so rebuilds stay cheap.
+class AvatarPhotoImage extends StatelessWidget {
+  const AvatarPhotoImage({
+    super.key,
+    required this.dataUri,
+    required this.size,
+    required this.fallback,
+  });
+
+  final String dataUri;
+  final double size;
+
+  /// What to show while, or if, the picture cannot be read.
+  final Widget fallback;
+
+  static final Map<String, Uint8List> _cache = <String, Uint8List>{};
+
+  static Uint8List? _bytesOf(String uri) {
+    final Uint8List? cached = _cache[uri];
+    if (cached != null) return cached;
+    final int comma = uri.indexOf(',');
+    if (comma < 0) return null;
+    try {
+      final Uint8List bytes = base64Decode(uri.substring(comma + 1));
+      if (_cache.length >= 8) _cache.remove(_cache.keys.first);
+      _cache[uri] = bytes;
+      return bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Uint8List? bytes = _bytesOf(dataUri);
+    if (bytes == null) return fallback;
+    return Image.memory(
+      bytes,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => fallback,
+    );
+  }
+}
+
+/// Just the letters, for surfaces that paint their own disc.
+class _InitialsText extends StatelessWidget {
+  const _InitialsText({
+    required this.radius,
+    required this.name,
+    required this.onDark,
+  });
+
+  final double radius;
+  final String name;
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      Formatters.initials(name),
+      style: TextStyle(
+        color: onDark ? AppColors.white : AppColors.royalBlue,
+        fontSize: radius * 0.7,
+        fontWeight: FontWeight.w700,
+      ),
+    );
   }
 }
 
@@ -144,14 +249,7 @@ class _Initials extends StatelessWidget {
         ),
       ),
       alignment: Alignment.center,
-      child: Text(
-        Formatters.initials(name),
-        style: TextStyle(
-          color: onDark ? AppColors.white : AppColors.royalBlue,
-          fontSize: radius * 0.7,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+      child: _InitialsText(radius: radius, name: name, onDark: onDark),
     );
   }
 }

@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_state.dart';
+import '../../core/media/avatar_photo.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/snackbar.dart';
@@ -48,7 +49,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   bool _ready = false;
   bool _saving = false;
-  int? _avatarIndex;
+
+  /// What the avatar section will save: `''` for initials, `avit://avatar/<i>`
+  /// for a preset, or a `data:image/…` URI for an uploaded picture.
+  String _avatarValue = '';
 
   @override
   void didChangeDependencies() {
@@ -63,7 +67,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _department.text = user.department;
     _hostel.text = user.hostel ?? '';
     _emergency.text = user.emergencyContact;
-    _avatarIndex = avatarPresetIndex(user.avatarUrl);
+    _avatarValue = user.avatarUrl ?? '';
   }
 
   @override
@@ -104,7 +108,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       department: _department.text.trim(),
       hostel: _hostel.text.trim(),
       emergencyContact: _digits(_emergency.text),
-      avatarUrl: _avatarIndex == null ? '' : avatarValueFor(_avatarIndex!),
+      avatarUrl: _avatarValue,
     );
 
     final bool ok = await state.updateProfile(updated);
@@ -127,6 +131,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  /// Asks the platform for a picture and takes it as the pending avatar.
+  Future<void> _pickPhoto() async {
+    final AppState state = AppScope.of(context).state;
+    final AvatarPhotoResult result = await state.deps.photos.pick();
+    if (!mounted || result.wasCancelled) return;
+    if (result.dataUri != null) {
+      setState(() => _avatarValue = result.dataUri!);
+      return;
+    }
+    showAVITSnackBar(
+      context,
+      message: result.error ?? 'We could not use that picture',
+      tone: AVITSnackTone.warning,
+    );
+  }
+
+  void _removePhoto() => setState(() => _avatarValue = '');
+
   @override
   Widget build(BuildContext context) {
     final AppUser? user = AppScope.of(context).state.user;
@@ -136,9 +158,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     final TextTheme text = Theme.of(context).textTheme;
-    final AppUser preview = user.copyWith(
-      avatarUrl: _avatarIndex == null ? '' : avatarValueFor(_avatarIndex!),
-    );
+    final AppUser preview = user.copyWith(avatarUrl: _avatarValue);
+    final int? preset = avatarPresetIndex(_avatarValue);
+    final bool hasPhoto = isAvatarPhoto(_avatarValue);
 
     return Scaffold(
       appBar: const AVITAppBar(title: 'Edit profile', subtitle: 'Your details'),
@@ -151,7 +173,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: <Widget>[
               AVITSectionHeader(
                 title: 'Profile picture',
-                subtitle: 'Pick a look — shown across the app',
+                subtitle: 'Upload your own or pick a look — shown everywhere',
               ),
               AVITCard(
                 child: Column(
@@ -163,7 +185,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
-                            _avatarIndex == null
+                            hasPhoto
+                                ? 'Your photo, shown across the app'
+                                : preset == null
                                 ? 'Your initials until you pick a picture'
                                 : 'This is how you appear across the app',
                             style: text.bodySmall?.copyWith(
@@ -173,21 +197,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ],
                     ),
+                    if (hasPhoto) ...<Widget>[
+                      const SizedBox(height: AppSpacing.xs),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _removePhoto,
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                          ),
+                          label: const Text('Remove photo'),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.md),
                     Wrap(
                       spacing: AppSpacing.md,
                       runSpacing: AppSpacing.md,
                       children: <Widget>[
+                        _UploadPhotoChoice(
+                          selected: hasPhoto,
+                          onTap: _pickPhoto,
+                        ),
                         for (int i = 0; i < kAvatarPresets.length; i++)
                           _AvatarChoice(
                             preset: kAvatarPresets[i],
-                            selected: _avatarIndex == i,
-                            onTap: () => setState(() => _avatarIndex = i),
+                            selected: preset == i,
+                            onTap: () => setState(
+                              () => _avatarValue = avatarValueFor(i),
+                            ),
                           ),
                         _InitialsChoice(
-                          selected: _avatarIndex == null,
+                          selected: !hasPhoto && preset == null,
                           label: user.fullName,
-                          onTap: () => setState(() => _avatarIndex = null),
+                          onTap: () => setState(() => _avatarValue = ''),
                         ),
                       ],
                     ),
@@ -229,11 +273,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       required: true,
                       value: _programme.text.isEmpty ? null : _programme.text,
                       items: <DropdownMenuItem<String>>[
-                        for (final String p in _options(_programmes, _programme.text))
+                        for (final String p in _options(
+                          _programmes,
+                          _programme.text,
+                        ))
                           DropdownMenuItem<String>(value: p, child: Text(p)),
                       ],
-                      onChanged: (String? v) =>
-                          setState(() => _programme.text = v ?? _programme.text),
+                      onChanged: (String? v) => setState(
+                        () => _programme.text = v ?? _programme.text,
+                      ),
                       validator: (String? v) => Validators.safeText(
                         v,
                         field: 'Programme',
@@ -366,7 +414,9 @@ class _AvatarChoice extends StatelessWidget {
               shape: BoxShape.circle,
               color: preset.color.withValues(alpha: 0.16),
               border: Border.all(
-                color: selected ? preset.color : preset.color.withValues(alpha: 0.3),
+                color: selected
+                    ? preset.color
+                    : preset.color.withValues(alpha: 0.3),
                 width: selected ? 2.5 : 1,
               ),
             ),
@@ -393,6 +443,68 @@ class _AvatarChoice extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _UploadPhotoChoice extends StatelessWidget {
+  const _UploadPhotoChoice({required this.selected, required this.onTap});
+
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Upload a photo',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadius.pillShape,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.info.withValues(alpha: 0.14),
+                border: Border.all(
+                  color: selected
+                      ? AppColors.info
+                      : AppColors.info.withValues(alpha: 0.35),
+                  width: selected ? 2.5 : 1,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.add_a_photo_rounded,
+                color: AppColors.info,
+                size: 24,
+              ),
+            ),
+            if (selected)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: AppColors.info,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.white, width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    size: 12,
+                    color: AppColors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -489,7 +601,11 @@ class _LockedRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Icon(Icons.lock_outline_rounded, size: 16, color: AppColors.textTertiary),
+          Icon(
+            Icons.lock_outline_rounded,
+            size: 16,
+            color: AppColors.textTertiary,
+          ),
         ],
       ),
     );
