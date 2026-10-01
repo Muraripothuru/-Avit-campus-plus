@@ -69,7 +69,9 @@ abstract final class ServiceRequestRules {
   static String? details(String? value) {
     final String v = (value ?? '').trim();
     if (v.isEmpty) return 'Describe what you need (20-500 characters)';
-    if (v.length < 20) return 'Add a little more detail (at least 20 characters)';
+    if (v.length < 20) {
+      return 'Add a little more detail (at least 20 characters)';
+    }
     if (v.length > 500) return 'Keep the description under 500 characters';
     return null;
   }
@@ -81,13 +83,11 @@ abstract final class ServiceRequestRules {
     return null;
   }
 
-  static String? urgency(String? value) => value == null
-      ? 'Select how urgent this request is'
-      : null;
+  static String? urgency(String? value) =>
+      value == null ? 'Select how urgent this request is' : null;
 
-  static String? contact(String? value) => value == null
-      ? 'Choose how the team should reach you'
-      : null;
+  static String? contact(String? value) =>
+      value == null ? 'Choose how the team should reach you' : null;
 
   static String? preferredDate(DateTime? value) {
     if (value == null) return 'Pick a preferred response date';
@@ -99,9 +99,8 @@ abstract final class ServiceRequestRules {
     return null;
   }
 
-  static String? declaration(bool? value) => (value ?? false)
-      ? null
-      : 'Accept the declaration before submitting';
+  static String? declaration(bool? value) =>
+      (value ?? false) ? null : 'Accept the declaration before submitting';
 
   /// Cheap completion check used by the progress meter (not the validator).
   static bool studentIdOk(String? value) => Validators.studentId(value) == null;
@@ -293,9 +292,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
       'urgency': _urgency,
       'contact': _contact,
       'date': _date?.toIso8601String(),
-      'time': _time == null
-          ? null
-          : '${_time!.hour}:${_time!.minute}',
+      'time': _time == null ? null : '${_time!.hour}:${_time!.minute}',
       'attach': _attach,
     });
     showAVITSnackBar(
@@ -344,7 +341,9 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
             children: <Widget>[
               const Icon(Icons.check_circle_rounded, color: AppColors.success),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(child: Text('Request submitted', style: text.titleMedium)),
+              Expanded(
+                child: Text('Request submitted', style: text.titleMedium),
+              ),
             ],
           ),
           content: SingleChildScrollView(
@@ -500,29 +499,29 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
             switchInCurve: Curves.easeOutCubic,
             transitionBuilder: (Widget child, Animation<double> anim) =>
                 FadeTransition(
-              opacity: anim,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.03),
-                  end: Offset.zero,
-                ).animate(anim),
-                child: child,
-              ),
-            ),
+                  opacity: anim,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.03),
+                      end: Offset.zero,
+                    ).animate(anim),
+                    child: child,
+                  ),
+                ),
             child: _submitted
                 ? KeyedSubtree(
                     key: const ValueKey<String>('done'),
                     child: _buildSuccess(),
                   )
                 : _step == 0
-                    ? KeyedSubtree(
-                        key: ValueKey<String>('details$_epoch'),
-                        child: _buildDetailsStep(text),
-                      )
-                    : KeyedSubtree(
-                        key: ValueKey<String>('review$_epoch'),
-                        child: _buildReviewStep(text),
-                      ),
+                ? KeyedSubtree(
+                    key: ValueKey<String>('details$_epoch'),
+                    child: _buildDetailsStep(text),
+                  )
+                : KeyedSubtree(
+                    key: ValueKey<String>('review$_epoch'),
+                    child: _buildReviewStep(text),
+                  ),
           ),
           if (_recent.isNotEmpty && !_submitted) _buildRecent(text),
           const SizedBox(height: AppSpacing.xxl),
@@ -532,41 +531,41 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   }
 
   Widget _buildIntro(TextTheme text) => AVITFadeUp(
-        child: AVITCard(
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 46,
-                height: 46,
-                decoration: const BoxDecoration(
-                  gradient: AppColors.heroGradient,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.support_agent_rounded,
-                  color: AppColors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text('AVIT Campus+ Service Desk', style: text.titleSmall),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Tell any campus unit what you need. Two short steps: '
-                      'details, then review and submit.',
-                      style: text.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    child: AVITCard(
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 46,
+            height: 46,
+            decoration: const BoxDecoration(
+              gradient: AppColors.heroGradient,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.support_agent_rounded,
+              color: AppColors.white,
+              size: 24,
+            ),
           ),
-        ),
-      );
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text('AVIT Campus+ Service Desk', style: text.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  'Tell any campus unit what you need. Two short steps: '
+                  'details, then review and submit.',
+                  style: text.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _buildStepper(TextTheme text) {
     return AVITFadeUp(
@@ -578,20 +577,32 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
         ),
         child: Column(
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                _stepBubble(text, 0, 'Details'),
-                Expanded(
-                  child: Container(
-                    height: 2,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    color: _step >= 1
-                        ? AppColors.royalBlue
-                        : AppColors.border,
+            LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints c) => Row(
+                children: <Widget>[
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: (c.maxWidth * 0.32).clamp(48.0, 150.0),
+                    ),
+                    child: _stepBubble(text, 0, 'Details'),
                   ),
-                ),
-                _stepBubble(text, 1, 'Review'),
-              ],
+                  Expanded(
+                    child: Container(
+                      height: 2,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      color: _step >= 1
+                          ? AppColors.royalBlue
+                          : AppColors.border,
+                    ),
+                  ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: (c.maxWidth * 0.32).clamp(48.0, 150.0),
+                    ),
+                    child: _stepBubble(text, 1, 'Review'),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
@@ -603,14 +614,14 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                     curve: Curves.easeOutCubic,
                     builder: (BuildContext context, double value, _) =>
                         ClipRRect(
-                      borderRadius: AppRadius.pillShape,
-                      child: LinearProgressIndicator(
-                        value: value,
-                        minHeight: 7,
-                        backgroundColor: AppColors.surfaceMuted,
-                        color: AppColors.royalBlue,
-                      ),
-                    ),
+                          borderRadius: AppRadius.pillShape,
+                          child: LinearProgressIndicator(
+                            value: value,
+                            minHeight: 7,
+                            backgroundColor: AppColors.surfaceMuted,
+                            color: AppColors.royalBlue,
+                          ),
+                        ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -652,11 +663,15 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
           ),
         ),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: text.labelMedium?.copyWith(
-            fontWeight: active ? FontWeight.w800 : FontWeight.w500,
-            color: active ? AppColors.navy : AppColors.textSecondary,
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.labelMedium?.copyWith(
+              fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+              color: active ? AppColors.navy : AppColors.textSecondary,
+            ),
           ),
         ),
       ],
@@ -664,33 +679,29 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   }
 
   Widget _buildDraftBanner() => AVITCard(
-        color: AppColors.warningSurface,
-        borderColor: AppColors.warning,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+    color: AppColors.warningSurface,
+    borderColor: AppColors.warning,
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.sm,
+    ),
+    child: Row(
+      children: <Widget>[
+        const Icon(Icons.history_rounded, size: 18, color: AppColors.warning),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            'Draft restored — pick up where you left off.',
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
         ),
-        child: Row(
-          children: <Widget>[
-            const Icon(
-              Icons.history_rounded,
-              size: 18,
-              color: AppColors.warning,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                'Draft restored — pick up where you left off.',
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-            ),
-            TextButton(
-              onPressed: () => setState(() => _draftRestored = false),
-              child: const Text('Dismiss'),
-            ),
-          ],
+        TextButton(
+          onPressed: () => setState(() => _draftRestored = false),
+          child: const Text('Dismiss'),
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _buildDetailsStep(TextTheme text) {
     return Form(
@@ -890,21 +901,29 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: <Widget>[
-                      AVITButton(
-                        label: _attach == null ? 'Attach a file' : 'Change file',
-                        icon: Icons.attach_file_rounded,
-                        variant: AVITButtonVariant.secondary,
-                        expand: false,
-                        compact: true,
-                        onPressed: _openAttachmentPicker,
+                      Flexible(
+                        child: AVITButton(
+                          label: _attach == null
+                              ? 'Attach a file'
+                              : 'Change file',
+                          icon: Icons.attach_file_rounded,
+                          variant: AVITButtonVariant.secondary,
+                          expand: false,
+                          compact: true,
+                          onPressed: _openAttachmentPicker,
+                        ),
                       ),
                       if (_attach != null) ...<Widget>[
                         const SizedBox(width: AppSpacing.sm),
-                        Chip(
-                          avatar: const Icon(Icons.description_rounded,
-                              size: 16),
-                          label: Text(_attach!),
-                          onDeleted: () => setState(() => _attach = null),
+                        Flexible(
+                          child: Chip(
+                            avatar: const Icon(
+                              Icons.description_rounded,
+                              size: 16,
+                            ),
+                            label: Text(_attach!),
+                            onDeleted: () => setState(() => _attach = null),
+                          ),
                         ),
                       ],
                     ],
@@ -999,9 +1018,8 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                 padding: const EdgeInsets.only(top: 4, left: 4),
                 child: Text(
                   field.errorText!,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.danger,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall
+                      ?.copyWith(color: AppColors.danger),
                 ),
               ),
           ],
@@ -1038,7 +1056,9 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                 child: Text(
                   _slotLabel,
                   style: text.bodyLarge?.copyWith(
-                    fontWeight: _date == null ? FontWeight.w400 : FontWeight.w700,
+                    fontWeight: _date == null
+                        ? FontWeight.w400
+                        : FontWeight.w700,
                     color: _date == null
                         ? AppColors.textSecondary
                         : AppColors.navy,
@@ -1108,8 +1128,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 12),
+                                padding: const EdgeInsets.only(top: 12),
                                 child: Text(
                                   'I confirm the information above is correct '
                                   'and agree that the campus unit may contact '
@@ -1146,10 +1165,10 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   icon: Icons.arrow_back_rounded,
                   variant: AVITButtonVariant.secondary,
                   onPressed: () => setState(() {
-                        _detailsKey = GlobalKey<FormState>();
-                        _reviewKey = GlobalKey<FormState>();
-                        _step = 0;
-                      }),
+                    _detailsKey = GlobalKey<FormState>();
+                    _reviewKey = GlobalKey<FormState>();
+                    _step = 0;
+                  }),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -1187,7 +1206,10 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
       MapEntry<String, String>('Category', _category ?? '—'),
       if (_category == facilitiesCategory &&
           (_values['block'] ?? '').trim().isNotEmpty)
-        MapEntry<String, String>('Block / room', (_values['block'] ?? '').trim()),
+        MapEntry<String, String>(
+          'Block / room',
+          (_values['block'] ?? '').trim(),
+        ),
       MapEntry<String, String>('Subject', (_values['subject'] ?? '').trim()),
       MapEntry<String, String>('Details', (_values['details'] ?? '').trim()),
       MapEntry<String, String>('Urgency', _urgency ?? '—'),
@@ -1214,9 +1236,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
               Expanded(
                 child: Text(
                   e.value.isEmpty ? '—' : e.value,
-                  style: text.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: text.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -1226,15 +1246,15 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   }
 
   Widget _buildSuccess() => SuccessState(
-        key: const ValueKey<String>('success-view'),
-        title: 'Request $_reference sent',
-        message: _category == null
-            ? 'The campus team will get back to you within one working day.'
-            : 'The $_category team will reach you via '
-                '${_contact ?? 'email'} within one working day.',
-        doneLabel: 'Start a new request',
-        onDone: _resetAll,
-      );
+    key: const ValueKey<String>('success-view'),
+    title: 'Request $_reference sent',
+    message: _category == null
+        ? 'The campus team will get back to you within one working day.'
+        : 'The $_category team will reach you via '
+              '${_contact ?? 'email'} within one working day.',
+    doneLabel: 'Start a new request',
+    onDone: _resetAll,
+  );
 
   Widget _buildRecent(TextTheme text) {
     return AVITFadeUp(

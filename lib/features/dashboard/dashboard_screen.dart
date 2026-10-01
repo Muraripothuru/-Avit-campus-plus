@@ -125,12 +125,22 @@ class _DashboardScreenState extends State<DashboardScreen>
             classesToday: _today.length,
           ),
           const SizedBox(height: AppSpacing.md),
-          Row(
-            children: <Widget>[
-              Expanded(child: _TodaySchedule(entries: _today)),
-              const SizedBox(width: AppSpacing.md),
-              _AttendanceCard(percentage: _attendance),
-            ],
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) => Row(
+              children: <Widget>[
+                Expanded(child: _TodaySchedule(entries: _today)),
+                const SizedBox(width: AppSpacing.md),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: (constraints.maxWidth * 0.55).clamp(
+                      140.0,
+                      240.0,
+                    ),
+                  ),
+                  child: _AttendanceCard(percentage: _attendance),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           AVITSectionHeader(
@@ -325,10 +335,10 @@ class _GreetingHeader extends StatelessWidget {
         borderColor: Colors.transparent,
         child: ClipRRect(
           borderRadius: AppRadius.card,
-          child: SizedBox(
-            height: 190,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 190),
             child: Stack(
-              fit: StackFit.expand,
+              alignment: Alignment.bottomCenter,
               children: <Widget>[
                 Positioned.fill(
                   child: _KenBurnsPhoto(asset: 'assets/images/college.png'),
@@ -347,63 +357,80 @@ class _GreetingHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Padding(
-                    padding: AppSpacing.cardPadding,
-                    child: Row(
-                      children: <Widget>[
-                        Container(
-                          width: 56,
-                          height: 56,
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.all(AppSpacing.sm),
-                          decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha: 0.20),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.18),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            _initials(user?.fullName ?? 'Student'),
-                            style: text.titleMedium?.copyWith(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w800,
+                Padding(
+                  padding: AppSpacing.cardPadding,
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        width: 56,
+                        height: 56,
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withValues(alpha: 0.20),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.18),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
+                          ],
+                        ),
+                        child: Text(
+                          _initials(user?.fullName ?? 'Student'),
+                          style: text.titleMedium?.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                '${Formatters.greeting(now)}, '
-                                '${(user?.fullName ?? 'Student').split(' ').first}',
-                                style: text.titleLarge?.copyWith(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              '${Formatters.greeting(now)}, '
+                              '${(user?.fullName ?? 'Student').split(' ').first}',
+                              style: text.titleLarge?.copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w700,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                Formatters.dayLong.format(now),
-                                style: text.bodySmall?.copyWith(
-                                  color: AppColors.white.withValues(alpha: 0.8),
-                                ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              Formatters.dayLong.format(now),
+                              style: text.bodySmall?.copyWith(
+                                color: AppColors.white.withValues(alpha: 0.8),
                               ),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 6,
-                                children: <Widget>[
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: <Widget>[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.white.withValues(
+                                      alpha: 0.16,
+                                    ),
+                                    borderRadius: AppRadius.pillShape,
+                                  ),
+                                  child: Text(
+                                    (user?.programme ?? 'AVIT').isEmpty
+                                        ? 'AVIT'
+                                        : _short(user!.programme),
+                                    style: text.labelSmall?.copyWith(
+                                      color: AppColors.white,
+                                    ),
+                                  ),
+                                ),
+                                if (user?.semester != null)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
@@ -416,39 +443,20 @@ class _GreetingHeader extends StatelessWidget {
                                       borderRadius: AppRadius.pillShape,
                                     ),
                                     child: Text(
-                                      (user?.programme ?? 'AVIT').isEmpty
-                                          ? 'AVIT'
-                                          : _short(user!.programme),
+                                      'Sem ${user!.semester}',
                                       style: text.labelSmall?.copyWith(
                                         color: AppColors.white,
                                       ),
                                     ),
                                   ),
-                                  if (user?.semester != null)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.white.withValues(
-                                          alpha: 0.16,
-                                        ),
-                                        borderRadius: AppRadius.pillShape,
-                                      ),
-                                      child: Text(
-                                        'Sem ${user!.semester}',
-                                        style: text.labelSmall?.copyWith(
-                                          color: AppColors.white,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ),
-                        Column(
+                      ),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 150),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: <Widget>[
                             const Icon(
@@ -474,6 +482,7 @@ class _GreetingHeader extends StatelessWidget {
                                 borderRadius: AppRadius.pillShape,
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: <Widget>[
                                   const Icon(
                                     Icons.badge_rounded,
@@ -481,11 +490,15 @@ class _GreetingHeader extends StatelessWidget {
                                     color: AppColors.royalBlue,
                                   ),
                                   const SizedBox(width: 5),
-                                  Text(
-                                    user?.studentId ?? '',
-                                    style: text.labelMedium?.copyWith(
-                                      color: AppColors.navy,
-                                      fontWeight: FontWeight.w700,
+                                  Flexible(
+                                    child: Text(
+                                      user?.studentId ?? '',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: text.labelMedium?.copyWith(
+                                        color: AppColors.navy,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -493,8 +506,8 @@ class _GreetingHeader extends StatelessWidget {
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -59,11 +59,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
   List<_Book> get _visible => _query.isEmpty
       ? _books
       : _books
-          .where((_Book b) =>
-              b.title.toLowerCase().contains(_query.toLowerCase()) ||
-              b.author.toLowerCase().contains(_query.toLowerCase()) ||
-              b.call.toLowerCase().contains(_query.toLowerCase()))
-          .toList();
+            .where(
+              (_Book b) =>
+                  b.title.toLowerCase().contains(_query.toLowerCase()) ||
+                  b.author.toLowerCase().contains(_query.toLowerCase()) ||
+                  b.call.toLowerCase().contains(_query.toLowerCase()),
+            )
+            .toList();
 
   @override
   Widget build(BuildContext context) {
@@ -89,8 +91,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
               borderColor: Colors.transparent,
               child: Row(
                 children: <Widget>[
-                  const Icon(Icons.local_library_rounded,
-                      color: AppColors.white, size: 34),
+                  const Icon(
+                    Icons.local_library_rounded,
+                    color: AppColors.white,
+                    size: 34,
+                  ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
@@ -198,8 +203,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   child: AVITCard(
                     child: Row(
                       children: <Widget>[
-                        const Icon(Icons.book_outlined,
-                            color: AppColors.royalBlue),
+                        const Icon(
+                          Icons.book_outlined,
+                          color: AppColors.royalBlue,
+                        ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Column(
@@ -234,7 +241,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
 class _Book {
   const _Book(this.title, this.author, this.call, this.issued)
-      : available = !issued;
+    : available = !issued;
 
   final String title;
   final String author;
@@ -258,13 +265,20 @@ class _LoanRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(title, style: Theme.of(context).textTheme.titleSmall),
-          ),
-          AVITStatusChip(label: dueIn, tone: tone, compact: true),
-        ],
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) => Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+            ),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: (constraints.maxWidth * 0.6).clamp(140.0, 220.0),
+              ),
+              child: AVITStatusChip(label: dueIn, tone: tone, compact: true),
+            ),
+          ],
+        ),
       ),
     );
   }

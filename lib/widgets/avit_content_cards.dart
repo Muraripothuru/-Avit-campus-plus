@@ -49,8 +49,8 @@ class AVITServiceCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
-            final double imageHeight =
-                ((constraints.maxHeight - 36) * 0.72).clamp(40.0, 88.0);
+            final double imageHeight = ((constraints.maxHeight - 36) * 0.72)
+                .clamp(40.0, 88.0);
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -91,58 +91,74 @@ class AVITServiceCard extends StatelessWidget {
         horizontal: AppSpacing.md,
         vertical: AppSpacing.md,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: AppRadius.small,
-                ),
-                child: Icon(icon, color: accent, size: 21),
-              ),
-              const Spacer(),
-              if (badge != null && badge! > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBlue,
-                    borderRadius: AppRadius.pillShape,
-                  ),
-                  child: Text(
-                    '$badge',
-                    style: text.labelSmall?.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w700,
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) =>
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.topLeft,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.12),
+                            borderRadius: AppRadius.small,
+                          ),
+                          child: Icon(icon, color: accent, size: 21),
+                        ),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: badge != null && badge! > 0
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryBlue,
+                                      borderRadius: AppRadius.pillShape,
+                                    ),
+                                    child: Text(
+                                      '$badge',
+                                      style: text.labelSmall?.copyWith(
+                                        color: AppColors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      title,
+                      style: text.titleSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle != null) ...<Widget>[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: text.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
                 ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            title,
-            style: text.titleSmall,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (subtitle != null) ...<Widget>[
-            const SizedBox(height: 2),
-            Text(
-              subtitle!,
-              style: text.bodySmall,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ],
-        ],
       ),
     );
   }
@@ -277,28 +293,48 @@ class AVITEventCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
-                    Icon(
-                      Icons.event_rounded,
-                      size: 14,
-                      color: AppColors.textSecondary,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(
+                          Icons.event_rounded,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            Formatters.relativeDay(event.startsAt),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.bodySmall,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      Formatters.relativeDay(event.startsAt),
-                      style: text.bodySmall,
-                    ),
-                    const SizedBox(width: 10),
-                    Icon(
-                      Icons.schedule_rounded,
-                      size: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      Formatters.time.format(event.startsAt),
-                      style: text.bodySmall,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            Formatters.time.format(event.startsAt),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.bodySmall,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -322,34 +358,52 @@ class AVITEventCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: <Widget>[
-                    AVITStatusChip(
-                      label: event.isFull
-                          ? 'Fully booked'
-                          : '${event.seatsLeft} seats left',
-                      tone: event.isFull
-                          ? AVITStatusTone.warning
-                          : AVITStatusTone.success,
-                      icon: event.isFull
-                          ? Icons.hourglass_bottom_rounded
-                          : Icons.event_available_rounded,
-                      compact: true,
-                    ),
-                    const Spacer(),
-                    if (event.registered)
-                      const AVITStatusChip(
-                        label: 'Registered',
-                        tone: AVITStatusTone.brand,
-                        icon: Icons.check_circle_rounded,
-                        compact: true,
-                      )
-                    else
-                      TextButton(
-                        onPressed: event.isFull ? null : onRegister,
-                        child: Text(event.isFull ? 'Full' : 'Register'),
-                      ),
-                  ],
+                LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final double w = constraints.maxWidth;
+                    return Row(
+                      children: <Widget>[
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: w * 0.55),
+                          child: AVITStatusChip(
+                            label: event.isFull
+                                ? 'Fully booked'
+                                : '${event.seatsLeft} seats left',
+                            tone: event.isFull
+                                ? AVITStatusTone.warning
+                                : AVITStatusTone.success,
+                            icon: event.isFull
+                                ? Icons.hourglass_bottom_rounded
+                                : Icons.event_available_rounded,
+                            compact: true,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (event.registered)
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: w * 0.4),
+                            child: const AVITStatusChip(
+                              label: 'Registered',
+                              tone: AVITStatusTone.brand,
+                              icon: Icons.check_circle_rounded,
+                              compact: true,
+                            ),
+                          )
+                        else
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: w * 0.4),
+                            child: TextButton(
+                              onPressed: event.isFull ? null : onRegister,
+                              child: Text(
+                                event.isFull ? 'Full' : 'Register',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -403,27 +457,42 @@ class AVITAnnouncementCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    AVITStatusChip(
-                      label: announcement.category.label,
-                      tone: AVITStatusTone.brand,
-                      compact: true,
-                    ),
-                    if (announcement.pinned) ...<Widget>[
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Icons.push_pin_rounded,
-                        size: 14,
-                        color: AppColors.warning,
+                LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) =>
+                      Row(
+                        children: <Widget>[
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: (constraints.maxWidth * 0.6).clamp(
+                                60.0,
+                                170.0,
+                              ),
+                            ),
+                            child: AVITStatusChip(
+                              label: announcement.category.label,
+                              tone: AVITStatusTone.brand,
+                              compact: true,
+                            ),
+                          ),
+                          if (announcement.pinned) ...<Widget>[
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.push_pin_rounded,
+                              size: 14,
+                              color: AppColors.warning,
+                            ),
+                          ],
+                          Expanded(
+                            child: Text(
+                              Formatters.relativeDay(announcement.publishedAt),
+                              maxLines: 1,
+                              textAlign: TextAlign.right,
+                              overflow: TextOverflow.ellipsis,
+                              style: text.labelSmall,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                    const Spacer(),
-                    Text(
-                      Formatters.relativeDay(announcement.publishedAt),
-                      style: text.labelSmall,
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -473,11 +542,7 @@ class AVITQrPanel extends StatelessWidget {
           Text(title, style: text.titleMedium),
           if (subtitle != null) ...<Widget>[
             const SizedBox(height: 4),
-            Text(
-              subtitle!,
-              style: text.bodySmall,
-              textAlign: TextAlign.center,
-            ),
+            Text(subtitle!, style: text.bodySmall, textAlign: TextAlign.center),
           ],
           const SizedBox(height: AppSpacing.md),
           Container(
@@ -493,9 +558,9 @@ class AVITQrPanel extends StatelessWidget {
               curve: Curves.easeOutBack,
               builder: (BuildContext context, double v, Widget? child) =>
                   Opacity(
-                opacity: v.clamp(0, 1),
-                child: Transform.scale(scale: 0.9 + 0.1 * v, child: child),
-              ),
+                    opacity: v.clamp(0, 1),
+                    child: Transform.scale(scale: 0.9 + 0.1 * v, child: child),
+                  ),
               child: QrImageView(
                 data: data,
                 size: size,
@@ -512,10 +577,7 @@ class AVITQrPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text(
-            'Show this code at the gate',
-            style: text.labelMedium,
-          ),
+          Text('Show this code at the gate', style: text.labelMedium),
         ],
       ),
     );

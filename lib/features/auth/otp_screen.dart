@@ -187,13 +187,18 @@ class _OtpScreenState extends State<OtpScreen>
       );
     } on AppException catch (e) {
       if (!mounted) return;
-      showAVITSnackBar(context, message: e.userMessage, tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: e.userMessage,
+        tone: AVITSnackTone.error,
+      );
     }
   }
 
   Future<void> _finishReset() async {
     if (!_password.text.isNotEmpty) return;
-    final String? bad = Validators.password(_password.text) ??
+    final String? bad =
+        Validators.password(_password.text) ??
         Validators.confirmPassword(_confirm.text, _password.text);
     if (bad != null) {
       setState(() => _error = bad);
@@ -213,14 +218,17 @@ class _OtpScreenState extends State<OtpScreen>
         message: 'Password updated — sign in with your new password',
         tone: AVITSnackTone.success,
       );
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        Routes.login,
-        (Route<dynamic> route) => false,
-      );
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(Routes.login, (Route<dynamic> route) => false);
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() => _verifying = false);
-      showAVITSnackBar(context, message: e.userMessage, tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: e.userMessage,
+        tone: AVITSnackTone.error,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _verifying = false);
@@ -235,8 +243,7 @@ class _OtpScreenState extends State<OtpScreen>
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
-    final bool showPasswordStep =
-        widget.arguments.resetPassword && _verified;
+    final bool showPasswordStep = widget.arguments.resetPassword && _verified;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Verification code')),
@@ -336,20 +343,35 @@ class _OtpScreenState extends State<OtpScreen>
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text(
-                          _secondsLeft > 0
-                              ? 'Resend in ${_secondsLeft}s'
-                              : 'Didn’t get it?',
-                          style: text.bodySmall,
-                        ),
-                        TextButton(
-                          onPressed: _secondsLeft > 0 ? null : _resend,
-                          child: const Text('Resend code'),
-                        ),
-                      ],
+                    LayoutBuilder(
+                      builder: (BuildContext context, BoxConstraints c) => Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Flexible(
+                            child: Text(
+                              _secondsLeft > 0
+                                  ? 'Resend in ${_secondsLeft}s'
+                                  : 'Didn’t get it?',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: text.bodySmall,
+                            ),
+                          ),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: (c.maxWidth * 0.45).clamp(96.0, 200.0),
+                            ),
+                            child: TextButton(
+                              onPressed: _secondsLeft > 0 ? null : _resend,
+                              child: const Text(
+                                'Resend code',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     AVITButton(

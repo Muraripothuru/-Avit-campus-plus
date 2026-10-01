@@ -25,7 +25,8 @@ class _TransportScreenState extends State<TransportScreen> {
   bool _loading = true;
   String? _error;
   List<BusRoute> _routes = <BusRoute>[];
-  final Map<String, TransportRequest> _myRequests = <String, TransportRequest>{};
+  final Map<String, TransportRequest> _myRequests =
+      <String, TransportRequest>{};
 
   @override
   void didChangeDependencies() {
@@ -82,7 +83,11 @@ class _TransportScreenState extends State<TransportScreen> {
       );
     } on AppException catch (e) {
       if (!mounted) return;
-      showAVITSnackBar(context, message: e.userMessage, tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: e.userMessage,
+        tone: AVITSnackTone.error,
+      );
     }
   }
 
@@ -164,8 +169,10 @@ class _TransportScreenState extends State<TransportScreen> {
                         Row(
                           children: <Widget>[
                             Expanded(
-                              child: Text(route.routeName,
-                                  style: text.titleSmall),
+                              child: Text(
+                                route.routeName,
+                                style: text.titleSmall,
+                              ),
                             ),
                             AVITStatusChip(
                               label: route.status,
@@ -185,8 +192,11 @@ class _TransportScreenState extends State<TransportScreen> {
                         const SizedBox(height: AppSpacing.sm),
                         Row(
                           children: <Widget>[
-                            Icon(Icons.person_pin_rounded,
-                                size: 14, color: AppColors.textSecondary),
+                            Icon(
+                              Icons.person_pin_rounded,
+                              size: 14,
+                              color: AppColors.textSecondary,
+                            ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -199,50 +209,64 @@ class _TransportScreenState extends State<TransportScreen> {
                           ],
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: BarRow(
-                                label: 'Seats filled',
-                                value: route.occupancy,
-                                caption:
-                                    '${route.bookedSeats}/${route.totalSeats}',
-                                color: route.hasSeats
-                                    ? AppColors.royalBlue
-                                    : AppColors.danger,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: <Widget>[
-                                AVITStatusChip(
-                                  label: '${route.availableSeats} free',
-                                  tone: route.hasSeats
-                                      ? AVITStatusTone.success
-                                      : AVITStatusTone.danger,
-                                  compact: true,
+                        LayoutBuilder(
+                          builder: (BuildContext context, BoxConstraints c) => Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: BarRow(
+                                  label: 'Seats filled',
+                                  value: route.occupancy,
+                                  caption:
+                                      '${route.bookedSeats}/${route.totalSeats}',
+                                  color: route.hasSeats
+                                      ? AppColors.royalBlue
+                                      : AppColors.danger,
                                 ),
-                                const SizedBox(height: 6),
-                                if (_myRequests.containsKey(route.id))
-                                  const AVITStatusChip(
-                                    label: 'Seat booked',
-                                    tone: AVITStatusTone.brand,
-                                    icon: Icons.check_circle_rounded,
-                                    compact: true,
-                                  )
-                                else
-                                  TextButton(
-                                    onPressed: route.hasSeats
-                                        ? () => _requestSeat(route)
-                                        : null,
-                                    child: Text(
-                                      route.hasSeats ? 'Reserve seat' : 'Full',
-                                    ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: (c.maxWidth * 0.42).clamp(
+                                    118.0,
+                                    170.0,
                                   ),
-                              ],
-                            ),
-                          ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: <Widget>[
+                                    AVITStatusChip(
+                                      label: '${route.availableSeats} free',
+                                      tone: route.hasSeats
+                                          ? AVITStatusTone.success
+                                          : AVITStatusTone.danger,
+                                      compact: true,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    if (_myRequests.containsKey(route.id))
+                                      const AVITStatusChip(
+                                        label: 'Seat booked',
+                                        tone: AVITStatusTone.brand,
+                                        icon: Icons.check_circle_rounded,
+                                        compact: true,
+                                      )
+                                    else
+                                      TextButton(
+                                        onPressed: route.hasSeats
+                                            ? () => _requestSeat(route)
+                                            : null,
+                                        child: Text(
+                                          route.hasSeats
+                                              ? 'Reserve seat'
+                                              : 'Full',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         if (route.pickupPoints.isNotEmpty) ...<Widget>[
                           const SizedBox(height: AppSpacing.xs),

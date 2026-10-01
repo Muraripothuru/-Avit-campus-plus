@@ -43,8 +43,9 @@ class _VisitorPassScreenState extends State<VisitorPassScreen> {
     });
     try {
       final AppUser? me = AppScope.of(context).state.user;
-      final List<VisitorPass> rows =
-          await deps.visitorPasses.myPasses(me?.studentId ?? '');
+      final List<VisitorPass> rows = await deps.visitorPasses.myPasses(
+        me?.studentId ?? '',
+      );
       if (!mounted) return;
       setState(() {
         _passes = rows;
@@ -83,55 +84,52 @@ class _VisitorPassScreenState extends State<VisitorPassScreen> {
       body: _loading
           ? const LoadingList(itemCount: 4)
           : _error != null
-              ? AVITErrorState(message: _error!, onRetry: _load)
-              : AVITRefresh(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: AppSpacing.screenPadding,
-                    children: <Widget>[
-                      AVITCard(
-                        color: AppColors.infoSurface,
-                        borderColor: Colors.transparent,
-                        child: Row(
-                          children: <Widget>[
-                            const Icon(Icons.info_rounded,
-                                color: AppColors.info),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                'Visitors are verified against a government ID '
-                                'at the gate and must be hosted by a student.',
-                                style: text.bodySmall,
-                              ),
-                            ),
-                          ],
+          ? AVITErrorState(message: _error!, onRetry: _load)
+          : AVITRefresh(
+              onRefresh: _load,
+              child: ListView(
+                padding: AppSpacing.screenPadding,
+                children: <Widget>[
+                  AVITCard(
+                    color: AppColors.infoSurface,
+                    borderColor: Colors.transparent,
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(Icons.info_rounded, color: AppColors.info),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            'Visitors are verified against a government ID '
+                            'at the gate and must be hosted by a student.',
+                            style: text.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (_passes.isEmpty)
+                    AVITEmptyState(
+                      title: 'No visitor invites yet',
+                      message:
+                          'Invite a parent, friend or recruiter to campus.',
+                      icon: Icons.badge_rounded,
+                      actionLabel: 'Invite someone',
+                      onAction: _showCreateSheet,
+                    )
+                  else
+                    for (final VisitorPass pass in _passes)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: _VisitorCard(
+                          pass: pass,
+                          onShowQr: () => _showQr(pass),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      if (_passes.isEmpty)
-                        AVITEmptyState(
-                          title: 'No visitor invites yet',
-                          message:
-                              'Invite a parent, friend or recruiter to campus.',
-                          icon: Icons.badge_rounded,
-                          actionLabel: 'Invite someone',
-                          onAction: _showCreateSheet,
-                        )
-                      else
-                        for (final VisitorPass pass in _passes)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.sm,
-                            ),
-                            child: _VisitorCard(
-                              pass: pass,
-                              onShowQr: () => _showQr(pass),
-                            ),
-                          ),
-                      const SizedBox(height: 88),
-                    ],
-                  ),
-                ),
+                  const SizedBox(height: 88),
+                ],
+              ),
+            ),
     );
   }
 
@@ -213,20 +211,21 @@ class _VisitorCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
               AVITStatusChip(
                 label: pass.status.label,
                 tone: _tone,
                 compact: true,
               ),
-              const SizedBox(width: 6),
               AVITStatusChip(
                 label: pass.idType,
                 tone: AVITStatusTone.brand,
                 compact: true,
               ),
-              const Spacer(),
               Text(
                 Formatters.relativeDay(pass.visitDate),
                 style: text.labelSmall,
@@ -238,9 +237,7 @@ class _VisitorCard extends StatelessWidget {
             children: <Widget>[
               const Icon(Icons.person_rounded, size: 18),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(pass.visitorName, style: text.titleSmall),
-              ),
+              Expanded(child: Text(pass.visitorName, style: text.titleSmall)),
               Text(pass.visitorPhone, style: text.labelMedium),
             ],
           ),
@@ -321,7 +318,11 @@ class _CreateVisitorFormState extends State<_CreateVisitorForm> {
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      showAVITSnackBar(context, message: e.userMessage, tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: e.userMessage,
+        tone: AVITSnackTone.error,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -379,13 +380,22 @@ class _CreateVisitorFormState extends State<_CreateVisitorForm> {
                 label: 'ID type',
                 value: _idType,
                 required: true,
-                items: <String>['Aadhaar', 'Driving licence', 'Passport', 'Voter ID']
-                    .map(
-                      (String v) =>
-                          DropdownMenuItem<String>(value: v, child: Text(v)),
-                    )
-                    .toList(),
-                onChanged: (String? v) => setState(() => _idType = v ?? 'Aadhaar'),
+                items:
+                    <String>[
+                          'Aadhaar',
+                          'Driving licence',
+                          'Passport',
+                          'Voter ID',
+                        ]
+                        .map(
+                          (String v) => DropdownMenuItem<String>(
+                            value: v,
+                            child: Text(v),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (String? v) =>
+                    setState(() => _idType = v ?? 'Aadhaar'),
               ),
               const SizedBox(height: AppSpacing.md),
               AVITTextField(
@@ -404,8 +414,7 @@ class _CreateVisitorFormState extends State<_CreateVisitorForm> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: 'Visit date',
-                    suffixIcon:
-                        Icon(Icons.calendar_month_rounded, size: 20),
+                    suffixIcon: Icon(Icons.calendar_month_rounded, size: 20),
                   ),
                   child: Text(Formatters.dayLong.format(_visitDate)),
                 ),

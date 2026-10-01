@@ -91,8 +91,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
       _startCooldown();
       final AuthRepository repo = scope.state.deps.auth;
-      final String? devCode =
-          repo is DemoAuthRepository ? repo.debugLastOtp : null;
+      final String? devCode = repo is DemoAuthRepository
+          ? repo.debugLastOtp
+          : null;
       if (!mounted) return;
       showAVITSnackBar(
         context,
@@ -131,13 +132,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
     } on AppException catch (e) {
       if (!mounted) return;
-      showAVITSnackBar(context, message: e.userMessage, tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: e.userMessage,
+        tone: AVITSnackTone.error,
+      );
     }
   }
 
   Future<void> _reset() async {
     FocusScope.of(context).unfocus();
-    final String? invalid = Validators.otp(_code.text) ??
+    final String? invalid =
+        Validators.otp(_code.text) ??
         Validators.password(_password.text) ??
         Validators.confirmPassword(_confirm.text, _password.text);
     if (invalid != null) {
@@ -161,10 +167,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         message: 'Password updated — sign in with your new password',
         tone: AVITSnackTone.success,
       );
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        Routes.login,
-        (Route<dynamic> route) => false,
-      );
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(Routes.login, (Route<dynamic> route) => false);
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -192,9 +197,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             constraints: const BoxConstraints(maxWidth: 460),
             child: SingleChildScrollView(
               padding: AppSpacing.screenPadding,
-              child: _step == 0
-                  ? _buildRequest(text)
-                  : _buildReset(text),
+              child: _step == 0 ? _buildRequest(text) : _buildReset(text),
             ),
           ),
         ),
@@ -219,7 +222,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text('Forgot your password?', style: text.headlineSmall, textAlign: TextAlign.center),
+        Text(
+          'Forgot your password?',
+          style: text.headlineSmall,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           'Enter your student ID or institutional email and we will send '
@@ -307,22 +314,40 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           required: true,
           prefixIcon: Icons.lock_reset_rounded,
           textInputAction: TextInputAction.done,
-          validator: (String? v) => Validators.confirmPassword(v, _password.text),
+          validator: (String? v) =>
+              Validators.confirmPassword(v, _password.text),
           onSubmitted: (_) => _reset(),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Text(
-              _secondsLeft > 0 ? 'Resend in ${_secondsLeft}s' : 'Code not received?',
-              style: text.bodySmall,
-            ),
-            TextButton(
-              onPressed: _secondsLeft > 0 ? null : _resend,
-              child: const Text('Resend code'),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints c) => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  _secondsLeft > 0
+                      ? 'Resend in ${_secondsLeft}s'
+                      : 'Code not received?',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.bodySmall,
+                ),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: (c.maxWidth * 0.45).clamp(96.0, 200.0),
+                ),
+                child: TextButton(
+                  onPressed: _secondsLeft > 0 ? null : _resend,
+                  child: const Text(
+                    'Resend code',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         AVITButton(

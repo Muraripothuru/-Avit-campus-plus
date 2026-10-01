@@ -173,7 +173,22 @@ class AVITSectionHeader extends StatelessWidget {
             ),
           ),
           if (actionLabel != null)
-            TextButton(onPressed: onAction, child: Text(actionLabel!)),
+            LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) =>
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: (constraints.maxWidth * 0.4).clamp(72.0, 220.0),
+                    ),
+                    child: TextButton(
+                      onPressed: onAction,
+                      child: Text(
+                        actionLabel!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+            ),
         ],
       ),
     );
@@ -218,16 +233,22 @@ class AVITStatusChip extends StatelessWidget {
         color: isDark ? bg.withValues(alpha: 0.18) : bg,
         borderRadius: AppRadius.pillShape,
       ),
-      child: Wrap(
-        spacing: 4,
-        runSpacing: 2,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          if (icon != null) Icon(icon, size: compact ? 12 : 14, color: fg),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium
-                ?.copyWith(color: fg, fontWeight: FontWeight.w700),
+          if (icon != null) ...<Widget>[
+            Icon(icon, size: compact ? 12 : 14, color: fg),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: fg, fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),

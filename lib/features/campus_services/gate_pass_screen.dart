@@ -251,7 +251,10 @@ class _PassCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
               AVITStatusChip(
                 label: pass.status.label,
@@ -263,13 +266,11 @@ class _PassCard extends StatelessWidget {
                     : Icons.info_outline_rounded,
                 compact: true,
               ),
-              const SizedBox(width: 6),
               AVITStatusChip(
                 label: pass.destination,
                 tone: AVITStatusTone.brand,
                 compact: true,
               ),
-              const Spacer(),
               Text(
                 Formatters.relativeDay(pass.createdAt),
                 style: text.labelSmall,
@@ -289,9 +290,13 @@ class _PassCard extends StatelessWidget {
                 children: <Widget>[
                   const Icon(Icons.logout_rounded, size: 14),
                   const SizedBox(width: 4),
-                  Text(
-                    Formatters.dayShort.format(pass.outAt),
-                    style: text.bodySmall,
+                  Flexible(
+                    child: Text(
+                      Formatters.dayShort.format(pass.outAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.bodySmall,
+                    ),
                   ),
                 ],
               ),
@@ -300,9 +305,13 @@ class _PassCard extends StatelessWidget {
                 children: <Widget>[
                   const Icon(Icons.login_rounded, size: 14),
                   const SizedBox(width: 4),
-                  Text(
-                    Formatters.dayShort.format(pass.inBy),
-                    style: text.bodySmall,
+                  Flexible(
+                    child: Text(
+                      Formatters.dayShort.format(pass.inBy),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.bodySmall,
+                    ),
                   ),
                 ],
               ),
@@ -311,10 +320,14 @@ class _PassCard extends StatelessWidget {
                 children: <Widget>[
                   const Icon(Icons.schedule_rounded, size: 14),
                   const SizedBox(width: 4),
-                  Text(
-                    '${Formatters.time.format(pass.outAt)} – '
-                    '${Formatters.time.format(pass.inBy)}',
-                    style: text.bodySmall,
+                  Flexible(
+                    child: Text(
+                      '${Formatters.time.format(pass.outAt)} – '
+                      '${Formatters.time.format(pass.inBy)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.bodySmall,
+                    ),
                   ),
                 ],
               ),

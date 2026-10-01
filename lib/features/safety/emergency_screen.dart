@@ -75,20 +75,20 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   }
 
   AVITStatusTone _toneFor(EmergencyStatus status) => switch (status) {
-        EmergencyStatus.raised => AVITStatusTone.warning,
-        EmergencyStatus.dispatched => AVITStatusTone.info,
-        EmergencyStatus.assigned => AVITStatusTone.brand,
-        EmergencyStatus.resolved => AVITStatusTone.success,
-      };
+    EmergencyStatus.raised => AVITStatusTone.warning,
+    EmergencyStatus.dispatched => AVITStatusTone.info,
+    EmergencyStatus.assigned => AVITStatusTone.brand,
+    EmergencyStatus.resolved => AVITStatusTone.success,
+  };
 
   IconData _iconFor(EmergencyType type) => switch (type) {
-        EmergencyType.security => Icons.shield_rounded,
-        EmergencyType.medical => Icons.medical_services_rounded,
-        EmergencyType.fire => Icons.local_fire_department_rounded,
-        EmergencyType.womenSafety => Icons.favorite_rounded,
-        EmergencyType.hostel => Icons.apartment_rounded,
-        EmergencyType.suspicious => Icons.report_rounded,
-      };
+    EmergencyType.security => Icons.shield_rounded,
+    EmergencyType.medical => Icons.medical_services_rounded,
+    EmergencyType.fire => Icons.local_fire_department_rounded,
+    EmergencyType.womenSafety => Icons.favorite_rounded,
+    EmergencyType.hostel => Icons.apartment_rounded,
+    EmergencyType.suspicious => Icons.report_rounded,
+  };
 
   Future<void> _raise() async {
     final String? locationError = Validators.safeText(
@@ -98,8 +98,11 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
       maxLength: 160,
     );
     if (locationError != null) {
-      showAVITSnackBar(context,
-          message: locationError, tone: AVITSnackTone.warning);
+      showAVITSnackBar(
+        context,
+        message: locationError,
+        tone: AVITSnackTone.warning,
+      );
       return;
     }
 
@@ -308,7 +311,8 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
             if (_history.isEmpty)
               const AVITEmptyState(
                 title: 'No emergencies raised',
-                message: 'Stay safe. Requests you raise appear here with '
+                message:
+                    'Stay safe. Requests you raise appear here with '
                     'live status updates.',
                 icon: Icons.verified_user_rounded,
               )
@@ -354,17 +358,15 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                               ),
                               if (req.locationNote.isNotEmpty) ...<Widget>[
                                 const SizedBox(height: 4),
-                                Text(
-                                  req.locationNote,
-                                  style: text.bodySmall,
-                                ),
+                                Text(req.locationNote, style: text.bodySmall),
                               ],
                               if (req.responder.isNotEmpty) ...<Widget>[
                                 const SizedBox(height: 4),
                                 Text(
                                   'Responder: ${req.responder}',
-                                  style: text.labelSmall
-                                      ?.copyWith(color: AppColors.info),
+                                  style: text.labelSmall?.copyWith(
+                                    color: AppColors.info,
+                                  ),
                                 ),
                               ],
                             ],
@@ -410,14 +412,16 @@ class _TypeTile extends StatelessWidget {
             color: selected ? AppColors.danger : AppColors.royalBlue,
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            type.label,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: text.labelSmall?.copyWith(
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: selected ? AppColors.danger : null,
+          Flexible(
+            child: Text(
+              type.label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: text.labelSmall?.copyWith(
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? AppColors.danger : null,
+              ),
             ),
           ),
         ],

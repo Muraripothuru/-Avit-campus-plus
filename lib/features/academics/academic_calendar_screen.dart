@@ -16,8 +16,7 @@ class AcademicCalendarScreen extends StatefulWidget {
   const AcademicCalendarScreen({super.key});
 
   @override
-  State<AcademicCalendarScreen> createState() =>
-      _AcademicCalendarScreenState();
+  State<AcademicCalendarScreen> createState() => _AcademicCalendarScreenState();
 }
 
 class _AcademicCalendarScreenState extends State<AcademicCalendarScreen> {
@@ -139,20 +138,33 @@ class _AcademicCalendarScreenState extends State<AcademicCalendarScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: Text(
-                                      d.title,
-                                      style: text.titleSmall,
+                              LayoutBuilder(
+                                builder:
+                                    (
+                                      BuildContext context,
+                                      BoxConstraints constraints,
+                                    ) => Row(
+                                      children: <Widget>[
+                                        Expanded(
+                                          child: Text(
+                                            d.title,
+                                            style: text.titleSmall,
+                                          ),
+                                        ),
+                                        ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth:
+                                                (constraints.maxWidth * 0.5)
+                                                    .clamp(80.0, 150.0),
+                                          ),
+                                          child: AVITStatusChip(
+                                            label: _labelFor(d),
+                                            tone: _toneFor(d),
+                                            compact: true,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  AVITStatusChip(
-                                    label: _labelFor(d),
-                                    tone: _toneFor(d),
-                                    compact: true,
-                                  ),
-                                ],
                               ),
                               if (d.detail.isNotEmpty) ...<Widget>[
                                 const SizedBox(height: 4),

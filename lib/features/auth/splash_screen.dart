@@ -27,25 +27,21 @@ class _SplashScreenState extends State<SplashScreen>
     curve: const Interval(0, 0.5, curve: Curves.easeOut),
   );
 
-  late final Animation<double> _logoScale = Tween<double>(
-    begin: 0.72,
-    end: 1,
-  ).animate(
-    CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0, 0.6, curve: Curves.easeOutBack),
-    ),
-  );
+  late final Animation<double> _logoScale = Tween<double>(begin: 0.72, end: 1)
+      .animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0, 0.6, curve: Curves.easeOutBack),
+        ),
+      );
 
-  late final Animation<Offset> _titleSlide = Tween<Offset>(
-    begin: const Offset(0, 0.6),
-    end: Offset.zero,
-  ).animate(
-    CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-    ),
-  );
+  late final Animation<Offset> _titleSlide =
+      Tween<Offset>(begin: const Offset(0, 0.6), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
+        ),
+      );
 
   late final Animation<double> _taglineOpacity = CurvedAnimation(
     parent: _controller,
@@ -79,9 +75,8 @@ class _SplashScreenState extends State<SplashScreen>
         ? Routes.dashboard
         : Routes.welcome;
     // Clear whatever stack exists so the app always starts from one root.
-    Navigator.of(
-      context,
-    ).pushNamedAndRemoveUntil(next, (Route<dynamic> route) => false);
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil(next, (Route<dynamic> route) => false);
   }
 
   @override
@@ -98,90 +93,101 @@ class _SplashScreenState extends State<SplashScreen>
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.heroGradient),
         child: SafeArea(
-          child: Column(
-            children: <Widget>[
-              const Spacer(),
-              FadeTransition(
-                opacity: _logoOpacity,
-                child: ScaleTransition(
-                  scale: _logoScale,
-                  child: Container(
-                    width: 118,
-                    height: 118,
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.white.withValues(alpha: 0.35),
-                        width: 1.5,
-                      ),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) =>
+                SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
                     ),
-                    child: const Center(
-                      child: Text(
-                        'A',
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontSize: 62,
-                          fontWeight: FontWeight.w800,
-                          height: 1,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        FadeTransition(
+                          opacity: _logoOpacity,
+                          child: ScaleTransition(
+                            scale: _logoScale,
+                            child: Container(
+                              width: 118,
+                              height: 118,
+                              decoration: BoxDecoration(
+                                color: AppColors.white.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.white.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'A',
+                                  style: TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 62,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: AppSpacing.lg),
+                        SlideTransition(
+                          position: _titleSlide,
+                          child: FadeTransition(
+                            opacity: _logoOpacity,
+                            child: Text(
+                              AppConstants.appName,
+                              style: text.displayMedium?.copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        FadeTransition(
+                          opacity: _taglineOpacity,
+                          child: Text(
+                            AppConstants.tagline,
+                            textAlign: TextAlign.center,
+                            style: text.bodyLarge?.copyWith(
+                              color: AppColors.white.withValues(alpha: 0.86),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                        FadeTransition(
+                          opacity: _taglineOpacity,
+                          child: Column(
+                            children: <Widget>[
+                              const SizedBox(
+                                width: 26,
+                                height: 26,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.6,
+                                  color: AppColors.white,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                AppConstants.universityName,
+                                textAlign: TextAlign.center,
+                                style: text.bodySmall?.copyWith(
+                                  color: AppColors.white.withValues(alpha: 0.7),
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SlideTransition(
-                position: _titleSlide,
-                child: FadeTransition(
-                  opacity: _logoOpacity,
-                  child: Text(
-                    AppConstants.appName,
-                    style: text.displayMedium?.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              FadeTransition(
-                opacity: _taglineOpacity,
-                child: Text(
-                  AppConstants.tagline,
-                  textAlign: TextAlign.center,
-                  style: text.bodyLarge?.copyWith(
-                    color: AppColors.white.withValues(alpha: 0.86),
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              FadeTransition(
-                opacity: _taglineOpacity,
-                child: Column(
-                  children: <Widget>[
-                    const SizedBox(
-                      width: 26,
-                      height: 26,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.6,
-                        color: AppColors.white,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      AppConstants.universityName,
-                      textAlign: TextAlign.center,
-                      style: text.bodySmall?.copyWith(
-                        color: AppColors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -196,6 +202,8 @@ class SplashScreenAnimatedNext extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) =>
-      FadeTransition(opacity: const AlwaysStoppedAnimation<double>(1), child: child);
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: const AlwaysStoppedAnimation<double>(1),
+    child: child,
+  );
 }

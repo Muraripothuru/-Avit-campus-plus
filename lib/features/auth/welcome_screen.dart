@@ -36,75 +36,92 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Expanded(
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) =>
+                  SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: <Widget>[
-                          FadeTransition(
-                            opacity: CurvedAnimation(
-                              parent: _controller,
-                              curve: const Interval(0, 0.6),
-                            ),
-                            child: Text(
-                              AppConstants.appName,
-                              style: text.headlineMedium?.copyWith(
-                                color: AppColors.navy,
-                                fontWeight: FontWeight.w800,
+                          const SizedBox(height: AppSpacing.lg),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    FadeTransition(
+                                      opacity: CurvedAnimation(
+                                        parent: _controller,
+                                        curve: const Interval(0, 0.6),
+                                      ),
+                                      child: Text(
+                                        AppConstants.appName,
+                                        style: text.headlineMedium?.copyWith(
+                                          color: AppColors.navy,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    FadeTransition(
+                                      opacity: CurvedAnimation(
+                                        parent: _controller,
+                                        curve: const Interval(0.2, 0.8),
+                                      ),
+                                      child: Text(
+                                        AppConstants.universityName,
+                                        style: text.bodyMedium?.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSpacing.lg),
+                          SizedBox(
+                            height: (constraints.maxHeight * 0.42).clamp(
+                              140.0,
+                              300.0,
+                            ),
+                            child: _CampusIllustration(animation: _controller),
+                          ),
                           FadeTransition(
                             opacity: CurvedAnimation(
                               parent: _controller,
-                              curve: const Interval(0.2, 0.8),
+                              curve: const Interval(0.4, 1),
                             ),
-                            child: Text(
-                              AppConstants.universityName,
-                              style: text.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  'Your campus, in your pocket',
+                                  style: text.headlineSmall,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Gate passes, attendance, events, transport and '
+                                  'emergency help — all in one secure app.',
+                                  style: text.bodyMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.lg),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Expanded(child: _CampusIllustration(animation: _controller)),
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _controller,
-                    curve: const Interval(0.4, 1),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'Your campus, in your pocket',
-                        style: text.headlineSmall,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Gate passes, attendance, events, transport and '
-                        'emergency help — all in one secure app.',
-                        style: text.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                  ),
-                ),
-              ],
             ),
           ),
         ),
@@ -170,15 +187,19 @@ class _CampusIllustration extends StatelessWidget {
                       bottom: 0,
                       child: Transform.translate(
                         offset: Offset(0, 24 * (1 - t)),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: <Widget>[
-                            _block(width: 74, height: 96, t: t, delay: 0.1),
-                            _block(width: 54, height: 132, t: t, delay: 0.25),
-                            _block(width: 88, height: 78, t: t, delay: 0.4),
-                            _block(width: 46, height: 112, t: t, delay: 0.55),
-                          ],
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.bottomCenter,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: <Widget>[
+                              _block(width: 74, height: 96, t: t, delay: 0.1),
+                              _block(width: 54, height: 132, t: t, delay: 0.25),
+                              _block(width: 88, height: 78, t: t, delay: 0.4),
+                              _block(width: 46, height: 112, t: t, delay: 0.55),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -186,37 +207,28 @@ class _CampusIllustration extends StatelessWidget {
                       left: 0,
                       right: 0,
                       top: 26,
-                      child: Column(
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        alignment: WrapAlignment.center,
                         children: <Widget>[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              _pill(
-                                label: 'Gate Pass',
-                                icon: Icons.qr_code_rounded,
-                                t: t,
-                                delay: 0.35,
-                              ),
-                              const SizedBox(width: 10),
-                              _pill(
-                                label: 'Attendance',
-                                icon: Icons.pie_chart_rounded,
-                                t: t,
-                                delay: 0.5,
-                              ),
-                            ],
+                          _pill(
+                            label: 'Gate Pass',
+                            icon: Icons.qr_code_rounded,
+                            t: t,
+                            delay: 0.35,
                           ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              _pill(
-                                label: 'Emergency',
-                                icon: Icons.emergency_rounded,
-                                t: t,
-                                delay: 0.65,
-                              ),
-                            ],
+                          _pill(
+                            label: 'Attendance',
+                            icon: Icons.pie_chart_rounded,
+                            t: t,
+                            delay: 0.5,
+                          ),
+                          _pill(
+                            label: 'Emergency',
+                            icon: Icons.emergency_rounded,
+                            t: t,
+                            delay: 0.65,
                           ),
                         ],
                       ),
@@ -247,9 +259,7 @@ class _CampusIllustration extends StatelessWidget {
           height: height,
           decoration: BoxDecoration(
             color: AppColors.white.withValues(alpha: 0.22),
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(8),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
           ),
         ),
       ),

@@ -72,8 +72,9 @@ class _ExamsScreenState extends State<ExamsScreen> {
       );
     }
 
-    final List<ExamSchedule> upcoming =
-        _exams.where((ExamSchedule e) => e.isUpcoming).toList();
+    final List<ExamSchedule> upcoming = _exams
+        .where((ExamSchedule e) => e.isUpcoming)
+        .toList();
     final List<ExamSchedule> past = _exams.reversed
         .where((ExamSchedule e) => !e.isUpcoming)
         .toList();
@@ -93,10 +94,7 @@ class _ExamsScreenState extends State<ExamsScreen> {
               borderColor: Colors.transparent,
               child: Row(
                 children: <Widget>[
-                  const Icon(
-                    Icons.badge_rounded,
-                    color: AppColors.warning,
-                  ),
+                  const Icon(Icons.badge_rounded, color: AppColors.warning),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
@@ -167,10 +165,13 @@ class _ExamsScreenState extends State<ExamsScreen> {
                             ],
                           ),
                         ),
-                        AVITStatusChip(
-                          label: e.type,
-                          tone: AVITStatusTone.warning,
-                          compact: true,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 112),
+                          child: AVITStatusChip(
+                            label: e.type,
+                            tone: AVITStatusTone.warning,
+                            compact: true,
+                          ),
                         ),
                       ],
                     ),

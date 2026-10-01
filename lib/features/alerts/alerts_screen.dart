@@ -75,8 +75,8 @@ class _AlertsScreenState extends State<AlertsScreen>
   List<AppNotification> get _visible => _filter == null
       ? _items
       : _items
-          .where((AppNotification n) => n.category == _filter)
-          .toList(growable: false);
+            .where((AppNotification n) => n.category == _filter)
+            .toList(growable: false);
 
   int get _unread => _items.where((AppNotification n) => !n.read).length;
 
@@ -128,7 +128,9 @@ class _AlertsScreenState extends State<AlertsScreen>
                       onSelected: (_) => setState(() => _filter = chip.$2),
                       selectedColor: AppColors.lightBlue,
                       labelStyle: text.labelMedium?.copyWith(
-                        color: _filter == chip.$2 ? AppColors.primaryBlue : null,
+                        color: _filter == chip.$2
+                            ? AppColors.primaryBlue
+                            : null,
                         fontWeight: _filter == chip.$2
                             ? FontWeight.w700
                             : FontWeight.w500,
@@ -433,20 +435,21 @@ class _NotificationTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: <Widget>[
                       AVITStatusChip(
                         label: notification.category.label,
                         tone: AVITStatusTone.brand,
                         compact: true,
                       ),
-                      const Spacer(),
                       Text(
                         Formatters.relativeDay(notification.receivedAt),
                         style: text.labelSmall,
                       ),
-                      if (unread) ...<Widget>[
-                        const SizedBox(width: 6),
+                      if (unread)
                         Container(
                           width: 8,
                           height: 8,
@@ -455,7 +458,6 @@ class _NotificationTile extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                         ),
-                      ],
                     ],
                   ),
                   const SizedBox(height: 6),

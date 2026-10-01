@@ -314,24 +314,35 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ],
                   const SizedBox(height: AppSpacing.md),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Flexible(
-                        child: Text(
-                          'New to AVIT Campus+?',
-                          style: text.bodySmall,
-                          overflow: TextOverflow.ellipsis,
+                  LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints c) => Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            'New to AVIT Campus+?',
+                            style: text.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushReplacementNamed(
-                          context,
-                          Routes.signup,
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: (c.maxWidth * 0.45).clamp(96.0, 200.0),
+                          ),
+                          child: TextButton(
+                            onPressed: () => Navigator.pushReplacementNamed(
+                              context,
+                              Routes.signup,
+                            ),
+                            child: const Text(
+                              'Create account',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ),
-                        child: const Text('Create account'),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),

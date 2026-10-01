@@ -39,8 +39,8 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
       _error = null;
     });
     try {
-      final List<UserSession> rows =
-          await AppScope.of(context).state.deps.auth.sessions();
+      final List<UserSession> rows = await AppScope.of(context).state.deps.auth
+          .sessions();
       if (!mounted) return;
       setState(() {
         _sessions = rows;
@@ -64,21 +64,22 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
   Future<void> _revoke(UserSession session) async {
     setState(() => _busy = true);
     try {
-      await AppScope.of(context)
-          .state
-          .deps
-          .auth
-          .revokeSession(session.id);
+      await AppScope.of(context).state.deps.auth.revokeSession(session.id);
       if (!mounted) return;
-      showAVITSnackBar(context,
-          message: 'Session revoked', tone: AVITSnackTone.success);
+      showAVITSnackBar(
+        context,
+        message: 'Session revoked',
+        tone: AVITSnackTone.success,
+      );
       await _load();
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);
-      showAVITSnackBar(context,
-          message: 'Could not revoke the session',
-          tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: 'Could not revoke the session',
+        tone: AVITSnackTone.error,
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -109,16 +110,20 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
     try {
       await AppScope.of(context).state.deps.auth.revokeAllSessions();
       if (!mounted) return;
-      showAVITSnackBar(context,
-          message: 'All other sessions signed out',
-          tone: AVITSnackTone.success);
+      showAVITSnackBar(
+        context,
+        message: 'All other sessions signed out',
+        tone: AVITSnackTone.success,
+      );
       await _load();
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);
-      showAVITSnackBar(context,
-          message: 'Could not sign out other devices',
-          tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: 'Could not sign out other devices',
+        tone: AVITSnackTone.error,
+      );
     }
   }
 
@@ -184,35 +189,51 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: Text(session.device,
-                                        style: text.titleSmall),
-                                  ),
-                                  if (session.current)
-                                    AVITStatusChip(
-                                      label: 'This device',
-                                      tone: AVITStatusTone.success,
-                                      compact: true,
+                              LayoutBuilder(
+                                builder:
+                                    (
+                                      BuildContext context,
+                                      BoxConstraints constraints,
+                                    ) => Row(
+                                      children: <Widget>[
+                                        Expanded(
+                                          child: Text(
+                                            session.device,
+                                            style: text.titleSmall,
+                                          ),
+                                        ),
+                                        if (session.current)
+                                          ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxWidth:
+                                                  (constraints.maxWidth * 0.5)
+                                                      .clamp(80.0, 150.0),
+                                            ),
+                                            child: AVITStatusChip(
+                                              label: 'This device',
+                                              tone: AVITStatusTone.success,
+                                              compact: true,
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                ],
                               ),
                               Text(
                                 '${Formatters.relativeDay(session.lastActive)} • '
                                 '${Formatters.time.format(session.lastActive)}',
                                 style: text.labelSmall,
                               ),
-                              Text(session.locationLabel,
-                                  style: text.labelSmall),
+                              Text(
+                                session.locationLabel,
+                                style: text.labelSmall,
+                              ),
                             ],
                           ),
                         ),
                         if (!session.current)
                           IconButton(
                             tooltip: 'Revoke',
-                            onPressed:
-                                _busy ? null : () => _revoke(session),
+                            onPressed: _busy ? null : () => _revoke(session),
                             icon: const Icon(Icons.close_rounded),
                           ),
                       ],
@@ -233,8 +254,7 @@ class _LoginActivityScreenState extends State<LoginActivityScreen> {
               leading: const Icon(Icons.password_rounded),
               title: Text('Also change your password', style: text.titleSmall),
               trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () =>
-                  Navigator.pushNamed(context, Routes.forgotPassword),
+              onTap: () => Navigator.pushNamed(context, Routes.forgotPassword),
             ),
             const SizedBox(height: AppSpacing.xl),
           ],

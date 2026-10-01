@@ -37,43 +37,46 @@ class ProgressRing extends StatelessWidget {
       width: size,
       height: size,
       child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: reduce ? value.clamp(0, 1) : 0, end: value.clamp(0, 1)),
+        tween: Tween<double>(
+          begin: reduce ? value.clamp(0, 1) : 0,
+          end: value.clamp(0, 1),
+        ),
         duration: reduce ? Duration.zero : duration,
         curve: Curves.easeOutCubic,
         builder: (BuildContext context, double animated, Widget? child) =>
             Stack(
-          fit: StackFit.expand,
-          alignment: Alignment.center,
-          children: <Widget>[
-            CircularProgressIndicator(
-              value: 1,
-              strokeWidth: strokeWidth,
-              backgroundColor: AppColors.surfaceMuted,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                _color.withValues(alpha: 0.18),
-              ),
-            ),
-            CircularProgressIndicator(
-              value: animated,
-              strokeWidth: strokeWidth,
-              strokeCap: StrokeCap.round,
-              backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(_color),
-            ),
-            if (center != null)
-              Center(child: center)
-            else if (label != null)
-              Center(
-                child: Text(
-                  label!,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: _color,
+              fit: StackFit.expand,
+              alignment: Alignment.center,
+              children: <Widget>[
+                CircularProgressIndicator(
+                  value: 1,
+                  strokeWidth: strokeWidth,
+                  backgroundColor: AppColors.surfaceMuted,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _color.withValues(alpha: 0.18),
                   ),
                 ),
-              ),
-          ],
-        ),
+                CircularProgressIndicator(
+                  value: animated,
+                  strokeWidth: strokeWidth,
+                  strokeCap: StrokeCap.round,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(_color),
+                ),
+                if (center != null)
+                  Center(child: center)
+                else if (label != null)
+                  Center(
+                    child: Text(
+                      label!,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: _color,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
       ),
     );
   }
@@ -110,8 +113,7 @@ class TrendLine extends StatelessWidget {
             tween: Tween<double>(begin: 0, end: 1),
             duration: const Duration(milliseconds: 750),
             curve: Curves.easeOutCubic,
-            builder: (BuildContext context, double t, Widget? _) =>
-                CustomPaint(
+            builder: (BuildContext context, double t, Widget? _) => CustomPaint(
               painter: _LinePainter(
                 values: values,
                 progress: t,
@@ -129,10 +131,8 @@ class TrendLine extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: labels
                   .map(
-                    (String l) => Text(
-                      l,
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
+                    (String l) =>
+                        Text(l, style: Theme.of(context).textTheme.labelSmall),
                   )
                   .toList(),
             ),
@@ -170,7 +170,10 @@ class _LinePainter extends CustomPainter {
         ),
     ];
 
-    final int visible = (points.length * progress).round().clamp(2, points.length);
+    final int visible = (points.length * progress).round().clamp(
+      2,
+      points.length,
+    );
     final List<Offset> shown = points.sublist(0, visible);
 
     final Path line = Path()..moveTo(shown.first.dx, shown.first.dy);
@@ -249,14 +252,18 @@ class BarRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
-              Text(
-                caption ?? '${(value * 100).round()}%',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
+              Flexible(
+                child: Text(
+                  caption ?? '${(value * 100).round()}%',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: color, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -270,11 +277,11 @@ class BarRow extends StatelessWidget {
               curve: Curves.easeOutCubic,
               builder: (BuildContext context, double v, Widget? _) =>
                   LinearProgressIndicator(
-                value: v,
-                minHeight: 8,
-                backgroundColor: AppColors.surfaceMuted,
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-              ),
+                    value: v,
+                    minHeight: 8,
+                    backgroundColor: AppColors.surfaceMuted,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
             ),
           ),
         ],

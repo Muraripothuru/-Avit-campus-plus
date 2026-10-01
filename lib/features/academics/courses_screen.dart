@@ -66,16 +66,15 @@ class _CoursesScreenState extends State<CoursesScreen> {
     }
   }
 
-  List<String> get _categories => <String>{
-        'All',
-        for (final Course c in _courses) c.category,
-      }.toList();
+  List<String> get _categories =>
+      <String>{'All', for (final Course c in _courses) c.category}.toList();
 
   List<Course> get _visible {
     final String q = _search.text.trim().toLowerCase();
     return _courses.where((Course c) {
       final bool okCategory = _category == 'All' || c.category == _category;
-      final bool okQuery = q.isEmpty ||
+      final bool okQuery =
+          q.isEmpty ||
           c.name.toLowerCase().contains(q) ||
           c.code.toLowerCase().contains(q) ||
           c.faculty.toLowerCase().contains(q);
@@ -86,8 +85,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
-    final int credits =
-        _courses.fold<int>(0, (int sum, Course c) => sum + c.credits);
+    final int credits = _courses.fold<int>(
+      0,
+      (int sum, Course c) => sum + c.credits,
+    );
 
     if (_loading) return const LoadingList(itemCount: 5);
     if (_error != null) {
@@ -98,7 +99,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
     }
 
     return Scaffold(
-      appBar: AVITAppBar(title: 'Courses', subtitle: '${_courses.length} subjects'),
+      appBar: AVITAppBar(
+        title: 'Courses',
+        subtitle: '${_courses.length} subjects',
+      ),
       body: AVITRefresh(
         onRefresh: _load,
         child: ListView(
@@ -152,8 +156,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                     side: BorderSide(
-                      color:
-                          selected ? AppColors.primaryBlue : AppColors.border,
+                      color: selected
+                          ? AppColors.primaryBlue
+                          : AppColors.border,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.pillShape,
@@ -207,14 +212,15 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: AppSpacing.xs),
-                              Row(
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
                                 children: <Widget>[
                                   AVITStatusChip(
                                     label: c.category,
                                     tone: AVITStatusTone.brand,
                                     compact: true,
                                   ),
-                                  const SizedBox(width: 6),
                                   AVITStatusChip(
                                     label: '${c.credits} credits',
                                     tone: AVITStatusTone.neutral,
