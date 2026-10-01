@@ -13,6 +13,7 @@ import '../../models/announcement.dart';
 import '../../models/campus_event.dart';
 import '../../data/repositories/content_repository.dart';
 import '../../models/user.dart';
+import '../../widgets/avit_avatar.dart';
 import '../../widgets/avit_cards.dart';
 import '../../widgets/avit_charts.dart';
 import '../../widgets/avit_content_cards.dart';
@@ -328,6 +329,10 @@ class _GreetingHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     final DateTime now = DateTime.now();
+    final String programme = user?.programme ?? '';
+    final int? picture = user == null
+        ? null
+        : avatarPresetIndex(user!.avatarUrl);
 
     return AVITFadeUp(
       child: AVITCard(
@@ -377,13 +382,19 @@ class _GreetingHeader extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: Text(
-                          _initials(user?.fullName ?? 'Student'),
-                          style: text.titleMedium?.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                        child: picture == null
+                            ? Text(
+                                _initials(user?.fullName ?? 'Student'),
+                                style: text.titleMedium?.copyWith(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              )
+                            : Icon(
+                                kAvatarPresets[picture].icon,
+                                color: AppColors.white,
+                                size: 26,
+                              ),
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
@@ -422,9 +433,7 @@ class _GreetingHeader extends StatelessWidget {
                                     borderRadius: AppRadius.pillShape,
                                   ),
                                   child: Text(
-                                    (user?.programme ?? 'AVIT').isEmpty
-                                        ? 'AVIT'
-                                        : _short(user!.programme),
+                                    programme.isEmpty ? 'AVIT' : _short(programme),
                                     style: text.labelSmall?.copyWith(
                                       color: AppColors.white,
                                     ),

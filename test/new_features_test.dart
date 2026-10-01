@@ -16,6 +16,7 @@ import 'package:avit_campus_plus/features/search/search_screen.dart';
 import 'package:avit_campus_plus/main.dart';
 import 'package:avit_campus_plus/models/campus_services.dart';
 import 'package:avit_campus_plus/models/user.dart';
+import 'package:avit_campus_plus/widgets/avit_avatar.dart';
 
 /// The four features added after the overflow sweep: profile editing, the
 /// offline/sync indicator, global search, and lost & found / health centre.
@@ -461,4 +462,64 @@ void main() {
     expect(find.text('Cancelled'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'a chosen picture is shown across the app, not just the profile',
+    (WidgetTester tester) async {
+      final AppState state = await boot(tester, email: student);
+      final NavigatorState nav = tester.state<NavigatorState>(
+        find.byType(Navigator),
+      );
+
+      nav.pushNamed(Routes.editProfile);
+      await pumpFrames(tester, count: 8);
+      expect(
+        find.byType(EditProfileScreen, skipOffstage: false),
+        findsOneWidget,
+      );
+
+      final Finder choice = find.byIcon(kAvatarPresets[3].icon);
+      expect(choice, findsOneWidget, reason: 'no picture is selected yet');
+      await tester.tap(choice);
+      await pumpFrames(tester, count: 4);
+      expect(
+        find.byIcon(kAvatarPresets[3].icon),
+        findsNWidgets(2),
+        reason: 'the preview above the grid reflects the tap immediately',
+      );
+
+      final Finder save = find.text('Save changes');
+      final Finder scroller = scrollerUnder(
+        save,
+        find.byType(EditProfileScreen, skipOffstage: false),
+      );
+      await tester.scrollUntilVisible(save, 300, scrollable: scroller);
+      await tester.pump();
+      await tester.ensureVisible(save);
+      await tester.pump();
+      await tester.tap(save);
+      await pumpFrames(tester, count: 10);
+
+      expect(state.user?.avatarUrl, 'avit://avatar/3');
+
+      // Back on the dashboard the greeting tile and the app bar carry the
+      // picture now, without navigating anywhere new.
+      final int before = find.byIcon(kAvatarPresets[3].icon).evaluate().length;
+      expect(
+        before,
+        greaterThanOrEqualTo(2),
+        reason: 'app bar + greeting tile',
+      );
+
+      // ...and so does the drawer header.
+      await tester.tap(find.byTooltip('Open menu').first);
+      await pumpFrames(tester, count: 8);
+      expect(
+        find.byIcon(kAvatarPresets[3].icon).evaluate().length,
+        before + 1,
+        reason: 'the drawer header joins them',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

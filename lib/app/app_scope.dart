@@ -24,6 +24,10 @@ class AppScope extends InheritedWidget {
   /// Non-listening read for callbacks that only need the repositories.
   static AppDependencies depsOf(BuildContext context) => of(context).state.deps;
 
+  /// Screens hold on to values read during build (the signed-in user, say), so
+  /// every rebuild of [AppScope] — which only happens when [AppState] notifies
+  /// — has to reach them. Comparing the [state] instance would always be false
+  /// because it is the same object for the life of the app.
   @override
-  bool updateShouldNotify(AppScope oldWidget) => oldWidget.state != state;
+  bool updateShouldNotify(AppScope oldWidget) => true;
 }

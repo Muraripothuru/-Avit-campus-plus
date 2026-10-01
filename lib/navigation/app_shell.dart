@@ -11,7 +11,9 @@ import '../features/alerts/alerts_screen.dart';
 import '../features/campus/campus_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../models/user.dart';
 import '../widgets/avit_app_bar.dart';
+import '../widgets/avit_avatar.dart';
 import '../widgets/avit_bottom_nav.dart';
 import '../widgets/avit_drawer.dart';
 
@@ -172,6 +174,7 @@ class _AppShellState extends State<AppShell> {
     final AppScope scope = AppScope.of(context);
     final String? error = scope.state.lastError;
     final int unread = scope.state.deps.localStore.unreadNotifications;
+    final AppUser? me = scope.state.user;
 
     if (error != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -229,15 +232,17 @@ class _AppShellState extends State<AppShell> {
               onPressed: () => _selectTab(
                 AppTab.values.indexOf(AppTab.profile),
               ),
-              icon: const CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.lightBlue,
-                child: Icon(
-                  Icons.person_rounded,
-                  size: 18,
-                  color: AppColors.royalBlue,
-                ),
-              ),
+              icon: me == null
+                  ? const CircleAvatar(
+                      radius: 16,
+                      backgroundColor: AppColors.lightBlue,
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: 18,
+                        color: AppColors.royalBlue,
+                      ),
+                    )
+                  : AVITAvatar(user: me, radius: 16),
             ),
           ),
         ],

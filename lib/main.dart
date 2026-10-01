@@ -189,11 +189,13 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScope(
-      state: _state,
-      child: ListenableBuilder(
-        listenable: _state,
-        builder: (BuildContext context, _) => MaterialApp(
+    return ListenableBuilder(
+      listenable: _state,
+      // AppScope has to be *inside* the listener: rebuilding it is what lets
+      // updateShouldNotify reach the screens below whenever state changes.
+      builder: (BuildContext context, _) => AppScope(
+        state: _state,
+        child: MaterialApp(
           title: AppConstants.appName,
           debugShowCheckedModeBanner: false,
           showPerformanceOverlay: false,

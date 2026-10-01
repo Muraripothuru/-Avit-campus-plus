@@ -5,6 +5,7 @@ import '../core/routes/app_routes.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../models/user.dart';
+import 'avit_avatar.dart';
 
 /// Premium animated navigation drawer with grouped destinations.
 class AVITDrawer extends StatelessWidget {
@@ -176,9 +177,8 @@ class _DrawerHeader extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Hero(
-              tag: 'avit-profile-avatar',
-              child: Container(
+            if (u == null)
+              Container(
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
@@ -191,15 +191,16 @@ class _DrawerHeader extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  _initials(u?.fullName ?? 'AV'),
+                  _initials('AV'),
                   style: const TextStyle(
                     color: AppColors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-            ),
+              )
+            else
+              AVITAvatar(user: u, radius: 32, onDark: true),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(

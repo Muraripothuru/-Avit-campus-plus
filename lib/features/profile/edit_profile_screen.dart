@@ -135,6 +135,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return const Scaffold(body: LoadingList(itemCount: 5));
     }
 
+    final TextTheme text = Theme.of(context).textTheme;
+    final AppUser preview = user.copyWith(
+      avatarUrl: _avatarIndex == null ? '' : avatarValueFor(_avatarIndex!),
+    );
+
     return Scaffold(
       appBar: const AVITAppBar(title: 'Edit profile', subtitle: 'Your details'),
       body: AVITRefresh(
@@ -149,20 +154,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 subtitle: 'Pick a look — shown across the app',
               ),
               AVITCard(
-                child: Wrap(
-                  spacing: AppSpacing.md,
-                  runSpacing: AppSpacing.md,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    for (int i = 0; i < kAvatarPresets.length; i++)
-                      _AvatarChoice(
-                        preset: kAvatarPresets[i],
-                        selected: _avatarIndex == i,
-                        onTap: () => setState(() => _avatarIndex = i),
-                      ),
-                    _InitialsChoice(
-                      selected: _avatarIndex == null,
-                      label: user.fullName,
-                      onTap: () => setState(() => _avatarIndex = null),
+                    Row(
+                      children: <Widget>[
+                        AVITAvatar(user: preview, radius: 26),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            _avatarIndex == null
+                                ? 'Your initials until you pick a picture'
+                                : 'This is how you appear across the app',
+                            style: text.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Wrap(
+                      spacing: AppSpacing.md,
+                      runSpacing: AppSpacing.md,
+                      children: <Widget>[
+                        for (int i = 0; i < kAvatarPresets.length; i++)
+                          _AvatarChoice(
+                            preset: kAvatarPresets[i],
+                            selected: _avatarIndex == i,
+                            onTap: () => setState(() => _avatarIndex = i),
+                          ),
+                        _InitialsChoice(
+                          selected: _avatarIndex == null,
+                          label: user.fullName,
+                          onTap: () => setState(() => _avatarIndex = null),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -329,19 +356,43 @@ class _AvatarChoice extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadius.pillShape,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: preset.color.withValues(alpha: 0.16),
-          border: Border.all(
-            color: selected ? preset.color : preset.color.withValues(alpha: 0.3),
-            width: selected ? 2.5 : 1,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: <Widget>[
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: preset.color.withValues(alpha: 0.16),
+              border: Border.all(
+                color: selected ? preset.color : preset.color.withValues(alpha: 0.3),
+                width: selected ? 2.5 : 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(preset.icon, color: preset.color, size: 24),
           ),
-        ),
-        alignment: Alignment.center,
-        child: Icon(preset.icon, color: preset.color, size: 24),
+          if (selected)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: preset.color,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.white, width: 2),
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  size: 12,
+                  color: AppColors.white,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
