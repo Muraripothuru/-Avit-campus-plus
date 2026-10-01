@@ -24,18 +24,22 @@ import 'package:avit_campus_plus/features/campus/campus_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/cafeteria_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/campus_map_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/gate_pass_screen.dart';
+import 'package:avit_campus_plus/features/campus_services/health_centre_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/hostel_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/library_screen.dart';
+import 'package:avit_campus_plus/features/campus_services/lost_found_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/smart_queue_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/service_request_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/transport_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/visitor_pass_screen.dart';
 import 'package:avit_campus_plus/features/dashboard/dashboard_screen.dart';
+import 'package:avit_campus_plus/features/profile/edit_profile_screen.dart';
 import 'package:avit_campus_plus/features/profile/profile_screen.dart';
 import 'package:avit_campus_plus/features/safety/complaints_screen.dart';
 import 'package:avit_campus_plus/features/safety/emergency_screen.dart';
 import 'package:avit_campus_plus/features/safety/report_incident_screen.dart';
 import 'package:avit_campus_plus/features/safety/scanner_screen.dart';
+import 'package:avit_campus_plus/features/search/search_screen.dart';
 import 'package:avit_campus_plus/features/staff/admin_dashboard_screen.dart';
 import 'package:avit_campus_plus/features/staff/announcements_screen.dart';
 import 'package:avit_campus_plus/features/staff/audit_log_screen.dart';
@@ -218,9 +222,30 @@ void main() {
         (Routes.cafeteria, 'cafeteria', () => screenOf(CafeteriaScreen), student),
         (Routes.hostel, 'hostel', () => screenOf(HostelScreen), student),
         (
+          Routes.lostFound,
+          'lost and found',
+          () => screenOf(LostFoundScreen),
+          student,
+        ),
+        (
+          Routes.healthCentre,
+          'health centre',
+          () => screenOf(HealthCentreScreen),
+          student,
+        ),
+        (
           Routes.serviceRequest,
           'service request form',
           () => screenOf(ServiceRequestScreen),
+          student,
+        ),
+
+        // Discovery + account
+        (Routes.search, 'global search', () => screenOf(SearchScreen), student),
+        (
+          Routes.editProfile,
+          'edit profile',
+          () => screenOf(EditProfileScreen),
           student,
         ),
 

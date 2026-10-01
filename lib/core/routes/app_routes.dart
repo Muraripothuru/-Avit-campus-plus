@@ -36,6 +36,11 @@ abstract final class Routes {
   static const String library = '/library';
   static const String cafeteria = '/cafeteria';
   static const String hostel = '/hostel';
+  static const String lostFound = '/lost-found';
+  static const String healthCentre = '/health-centre';
+
+  // Discovery
+  static const String search = '/search';
 
   // Safety
   static const String emergency = '/emergency';
@@ -56,6 +61,7 @@ abstract final class Routes {
   static const String about = '/about';
   static const String privacy = '/privacy';
   static const String loginActivity = '/login-activity';
+  static const String editProfile = '/edit-profile';
 
   /// Routes that require an authenticated session.
   static const Set<String> protected = <String>{
@@ -79,6 +85,9 @@ abstract final class Routes {
     library,
     cafeteria,
     hostel,
+    lostFound,
+    healthCentre,
+    search,
     emergency,
     reportIncident,
     complaints,
@@ -93,5 +102,6 @@ abstract final class Routes {
     about,
     privacy,
     loginActivity,
+    editProfile,
   };
 }

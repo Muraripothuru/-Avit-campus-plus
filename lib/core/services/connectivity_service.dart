@@ -21,9 +21,7 @@ class ConnectivityService extends ChangeNotifier {
 
   Future<void> _init() async {
     try {
-      final List<ConnectivityResult> results =
-          await _connectivity.checkConnectivity();
-      _apply(results);
+      await refresh();
       _connectivity.onConnectivityChanged.listen(_apply);
     } catch (_) {
       // Desktop/CI without the plugin: assume online, screens still handle
@@ -32,6 +30,17 @@ class ConnectivityService extends ChangeNotifier {
       _initialized = true;
       notifyListeners();
     }
+  }
+
+  /// Re-reads the platform connectivity and republishes only on a change.
+  ///
+  /// Returns the current online state so a "Try again" action can tell the
+  /// user whether the retry helped without forcing a rebuild.
+  Future<bool> refresh() async {
+    final List<ConnectivityResult> results = await _connectivity
+        .checkConnectivity();
+    _apply(results);
+    return _online;
   }
 
   void _apply(List<ConnectivityResult> results) {

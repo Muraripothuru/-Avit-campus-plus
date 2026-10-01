@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/app_scope.dart';
 import '../core/routes/app_routes.dart';
+import '../core/services/connectivity_service.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/utils/snackbar.dart';
@@ -209,6 +210,11 @@ class _AppShellState extends State<AppShell> {
           ),
         ),
         actions: <Widget>[
+          IconButton(
+            tooltip: 'Search',
+            onPressed: () => Navigator.of(context).pushNamed(Routes.search),
+            icon: const Icon(Icons.search_rounded),
+          ),
           AVITBadgeButton(
             icon: Icons.notifications_rounded,
             count: unread,
@@ -244,8 +250,10 @@ class _AppShellState extends State<AppShell> {
         top: false,
         child: Column(
           children: <Widget>[
-            if (!scope.state.deps.connectivity.isOnline)
-              const _OfflineBanner(),
+            // Always mounted: the banner listens to ConnectivityService and
+            // collapses itself when the connection returns, so the
+            // "back online" transition is never missed.
+            _OfflineBanner(connectivity: scope.state.deps.connectivity),
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 260),
@@ -332,36 +340,112 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-class _OfflineBanner extends StatelessWidget {
-  const _OfflineBanner();
+/// Persistent connectivity strip.
+///
+/// Mounted for the lifetime of the shell and driven by a [ListenableBuilder]
+/// over [ConnectivityService], so it appears and disappears without waiting
+/// for an unrelated rebuild. Offers a manual retry for connections the
+/// platform still reports as up (captive portals, dropped Wi-Fi).
+class _OfflineBanner extends StatefulWidget {
+  const _OfflineBanner({required this.connectivity});
+
+  final ConnectivityService connectivity;
+
+  @override
+  State<_OfflineBanner> createState() => _OfflineBannerState();
+}
+
+class _OfflineBannerState extends State<_OfflineBanner> {
+  late bool _wasOffline = !widget.connectivity.isOnline;
+  bool _checking = false;
+
+  Future<void> _retry() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    bool online;
+    try {
+      online = await widget.connectivity.refresh();
+    } catch (_) {
+      online = widget.connectivity.isOnline;
+    }
+    if (!mounted) return;
+    setState(() => _checking = false);
+    showAVITSnackBar(
+      context,
+      message: online
+          ? 'Back online — everything is up to date'
+          : 'Still offline. Check your Wi-Fi or mobile data.',
+      tone: online ? AVITSnackTone.success : AVITSnackTone.warning,
+    );
+  }
+
+  void _announceReturn() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showAVITSnackBar(
+        context,
+        message: 'Back online — everything is up to date',
+        tone: AVITSnackTone.success,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.warningSurface,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: Row(
-        children: <Widget>[
-          const Icon(
-            Icons.cloud_off_rounded,
-            size: 16,
-            color: AppColors.warning,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              "You're offline. Some information may be outdated.",
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF8A5B00),
-              ),
+    return ListenableBuilder(
+      listenable: widget.connectivity,
+      builder: (BuildContext context, Widget? _) {
+        final bool offline = !widget.connectivity.isOnline;
+        final bool justReturned = _wasOffline && !offline;
+        _wasOffline = offline;
+
+        if (offline) {
+          return Container(
+            width: double.infinity,
+            color: AppColors.warningSurface,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
-          ),
-        ],
-      ),
+            child: Row(
+              children: <Widget>[
+                const Icon(
+                  Icons.cloud_off_rounded,
+                  size: 16,
+                  color: AppColors.warning,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "You're offline. Some information may be outdated.",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF8A5B00),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _checking ? null : _retry,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(0, 32),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: _checking
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Try again'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (justReturned) _announceReturn();
+        return const SizedBox.shrink();
+      },
     );
   }
 }

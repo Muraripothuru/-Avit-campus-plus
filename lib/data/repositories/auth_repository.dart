@@ -49,6 +49,14 @@ abstract class AuthRepository {
     required String currentPassword,
     required String newPassword,
   });
+
+  /// Persists editable profile fields and returns the stored account.
+  ///
+  /// Immutable identity fields (id, email, role, student ID) are never
+  /// accepted from the client — the repository ignores any attempt to move
+  /// them.
+  Future<AppUser> updateProfile(AppUser updated);
+
   Future<bool> refresh(String refreshToken);
   Future<List<UserSession>> sessions();
   Future<void> revokeSession(String sessionId);
@@ -196,6 +204,30 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AppUser> updateProfile(AppUser updated) async {
+    final Map<String, Object?> res = await api.put(
+      '/me',
+      body: <String, Object?>{
+        'fullName': updated.fullName,
+        'phone': updated.phone,
+        'programme': updated.programme,
+        'department': updated.department,
+        'hostel': updated.hostel,
+        'emergencyContact': updated.emergencyContact,
+        'avatarUrl': updated.avatarUrl,
+      },
+    );
+    return AppUser.fromJson(<String, Object?>{
+      ...updated.toJson(),
+      ...res,
+      'id': updated.id,
+      'email': updated.email,
+      'role': updated.role.apiValue,
+      'studentId': updated.studentId,
+    });
+  }
+
+  @override
   Future<bool> refresh(String refreshToken) async {
     try {
       final Map<String, Object?> payload = await api.post(
@@ -304,11 +336,34 @@ class DemoAuthRepository implements AuthRepository {
   final List<_DemoAccount> _registered = <_DemoAccount>[];
   bool _registeredLoaded = false;
 
+  /// Profile edits keyed by user id, applied over the seeded catalogue and
+  /// over sign-up accounts alike so an edit survives a restart.
+  final Map<String, AppUser> _profileEdits = <String, AppUser>{};
+
   Future<void> _ensureRegisteredLoaded() async {
     if (_registeredLoaded) return;
     _registeredLoaded = true;
     final SecureStore? storage = store;
     if (storage == null) return;
+    try {
+      final String? rawProfiles = await storage.read(SecureKeys.demoProfiles);
+      if (rawProfiles != null && rawProfiles.isNotEmpty) {
+        final Object? decoded = jsonDecode(rawProfiles);
+        if (decoded is Map) {
+          for (final MapEntry<Object?, Object?> entry in decoded.entries) {
+            final Object? key = entry.key;
+            final Object? value = entry.value;
+            if (key is! String || value is! Map) continue;
+            _profileEdits[key] = AppUser.fromJson(
+              Map<String, Object?>.from(value),
+            );
+          }
+        }
+      }
+    } catch (_) {
+      // Corrupt profile edits only cost the local overrides.
+      _profileEdits.clear();
+    }
     try {
       final String? raw = await storage.read(SecureKeys.demoAccounts);
       if (raw == null || raw.isEmpty) return;
@@ -347,7 +402,19 @@ class DemoAuthRepository implements AuthRepository {
     } catch (_) {
       // Best effort: the account still works for this run of the app.
     }
+    try {
+      final String payload = jsonEncode(<String, Object?>{
+        for (final MapEntry<String, AppUser> e in _profileEdits.entries)
+          e.key: e.value.toJson(),
+      });
+      await storage.write(SecureKeys.demoProfiles, payload);
+    } catch (_) {
+      // Best effort: the edit still applies for this run of the app.
+    }
   }
+
+  /// Applies a locally stored profile edit over whatever account was seeded.
+  AppUser _resolve(AppUser user) => _profileEdits[user.id] ?? user;
 
   /// Restores a signed-up account after the app restarts.
   Future<AppUser?> userById(String id) async {
@@ -364,13 +431,13 @@ class DemoAuthRepository implements AuthRepository {
       final AppUser user = account.user;
       if (user.email.toLowerCase() == value ||
           (user.studentId?.toLowerCase() == value)) {
-        return user;
+        return _resolve(user);
       }
     }
     for (final (UserRole _, AppUser user, String _) in DemoCatalog.accounts) {
       if (user.email.toLowerCase() == value ||
           (user.studentId?.toLowerCase() == value)) {
-        return user;
+        return _resolve(user);
       }
     }
     return null;
@@ -378,11 +445,11 @@ class DemoAuthRepository implements AuthRepository {
 
   AppUser? _userById(String id) {
     for (final _DemoAccount account in _registered) {
-      if (account.user.id == id) return account.user;
+      if (account.user.id == id) return _resolve(account.user);
     }
     for (final (UserRole _, AppUser user, String _)
         in DemoCatalog.accounts) {
-      if (user.id == id) return user;
+      if (user.id == id) return _resolve(user);
     }
     return null;
   }
@@ -612,6 +679,38 @@ class DemoAuthRepository implements AuthRepository {
       actorId: user.id,
       role: user.role.apiValue,
     );
+  }
+
+  @override
+  Future<AppUser> updateProfile(AppUser updated) async {
+    await _ensureRegisteredLoaded();
+    final AppUser? current = _userById(updated.id);
+    if (current == null) throw AppException.unauthorized;
+
+    // Identity fields are decided by the catalogue, never by the client.
+    final AppUser saved = current.copyWith(
+      fullName: updated.fullName.trim(),
+      phone: updated.phone.trim(),
+      programme: updated.programme.trim(),
+      department: updated.department.trim(),
+      hostel: updated.hostel,
+      emergencyContact: updated.emergencyContact.trim(),
+      avatarUrl: updated.avatarUrl,
+    );
+    _profileEdits[saved.id] = saved;
+    await _persistRegistered();
+
+    // Keep the sign-up copy in step so a re-login shows the same data.
+    final int index = _registered.indexWhere(
+      (_DemoAccount a) => a.user.id == saved.id,
+    );
+    if (index >= 0) {
+      _registered[index] = _DemoAccount(
+        user: saved,
+        password: _registered[index].password,
+      );
+    }
+    return saved;
   }
 
   @override

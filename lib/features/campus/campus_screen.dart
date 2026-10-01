@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_state.dart';
@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_exception.dart';
 import '../../models/campus_services.dart';
+import '../../navigation/service_catalog.dart';
 import '../../widgets/avit_cards.dart';
 import '../../widgets/avit_content_cards.dart';
 import '../../widgets/avit_feedback.dart';
@@ -77,54 +78,8 @@ class _CampusScreenState extends State<CampusScreen>
     }
   }
 
-  static const Map<String, List<_Service>> _groups =
-      <String, List<_Service>>{
-        'Academics': <_Service>[
-          _Service('Timetable', Icons.schedule_rounded, Routes.timetable,
-              'Week at a glance', AVITStatusTone.brand),
-          _Service('Attendance', Icons.pie_chart_rounded, Routes.attendance,
-              'Subject-wise tracking', AVITStatusTone.brand),
-          _Service('Courses', Icons.menu_book_rounded, Routes.courses,
-              'Syllabus & credits', AVITStatusTone.brand),
-          _Service('Examinations', Icons.assignment_rounded, Routes.examinations,
-              'Hall tickets & dates', AVITStatusTone.warning),
-          _Service('Academic Calendar', Icons.calendar_month_rounded,
-              Routes.academicCalendar, 'Important dates', AVITStatusTone.info),
-        ],
-        'Passes & Movement': <_Service>[
-          _Service('Gate Pass', Icons.qr_code_rounded, Routes.gatePass,
-              'Exit approval + QR', AVITStatusTone.brand, badgeKey: 'gate'),
-          _Service('Visitor Pass', Icons.badge_rounded, Routes.visitorPass,
-              'Invite someone on campus', AVITStatusTone.brand,
-              badgeKey: 'visitor'),
-          _Service('Transport', Icons.directions_bus_rounded, Routes.transport,
-              'Bus routes & seats', AVITStatusTone.info),
-          _Service('Scanner', Icons.qr_code_scanner_rounded, Routes.scanner,
-              'Scan any AVIT pass', AVITStatusTone.info),
-        ],
-        'On Campus': <_Service>[
-          _Service('Service Request', Icons.edit_note_rounded,
-              Routes.serviceRequest, 'Ask any campus unit', AVITStatusTone.brand),
-          _Service('Smart Queue', Icons.hourglass_top_rounded, Routes.smartQueue,
-              'Skip the waiting line', AVITStatusTone.info),
-          _Service('Campus Map', Icons.map_rounded, Routes.campusMap,
-              'Find any building', AVITStatusTone.info),
-          _Service('Library', Icons.local_library_rounded, Routes.library,
-              'Hours, books, dues', AVITStatusTone.brand),
-          _Service('Cafeteria', Icons.restaurant_rounded, Routes.cafeteria,
-              'Menu & timings', AVITStatusTone.success),
-          _Service('Hostel', Icons.apartment_rounded, Routes.hostel,
-              'Rooms, mess, requests', AVITStatusTone.info),
-        ],
-        'Safety': <_Service>[
-          _Service('Emergency', Icons.emergency_rounded, Routes.emergency,
-              'One tap to alert security', AVITStatusTone.danger),
-          _Service('Report Incident', Icons.report_problem_rounded,
-              Routes.reportIncident, 'Confidential report', AVITStatusTone.danger),
-          _Service('Complaints', Icons.support_agent_rounded, Routes.complaints,
-              'Track your requests', AVITStatusTone.warning),
-        ],
-      };
+  /// Shared with the global search so both surfaces list identical services.
+  static const Map<String, List<ServiceEntry>> _groups = ServiceCatalog.groups;
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +166,7 @@ class _CampusScreenState extends State<CampusScreen>
             ),
             const SizedBox(height: AppSpacing.md),
           ],
-          for (final MapEntry<String, List<_Service>> entry
+          for (final MapEntry<String, List<ServiceEntry>> entry
               in _groups.entries)
             if (_group == 'All' || _group == entry.key) ...<Widget>[
               AVITSectionHeader(
@@ -226,7 +181,7 @@ class _CampusScreenState extends State<CampusScreen>
                 crossAxisSpacing: AppSpacing.sm,
                 childAspectRatio: 0.86,
                 children: <Widget>[
-                  for (final _Service service in entry.value)
+                  for (final ServiceEntry service in entry.value)
                     if (_matches(service))
                       AVITServiceCard(
                         title: service.title,
@@ -302,19 +257,14 @@ class _CampusScreenState extends State<CampusScreen>
     );
   }
 
-  bool _matches(_Service service) {
-    if (_query.isEmpty) return true;
-    final String q = _query.toLowerCase();
-    return service.title.toLowerCase().contains(q) ||
-        service.subtitle.toLowerCase().contains(q);
-  }
+  bool _matches(ServiceEntry service) => service.matches(_query);
 
   List<CampusLocation> get _matchingLocations => _locations
       .where((CampusLocation p) => p.matches(_query))
       .toList();
 
   bool get _hasAnyResult {
-    for (final MapEntry<String, List<_Service>> entry in _groups.entries) {
+    for (final MapEntry<String, List<ServiceEntry>> entry in _groups.entries) {
       if (_group != 'All' && _group != entry.key) continue;
       if (entry.value.any(_matches)) return true;
     }
@@ -331,22 +281,4 @@ class _CampusScreenState extends State<CampusScreen>
       .deps
       .localStore
       .pendingVisitorPasses;
-}
-
-class _Service {
-  const _Service(
-    this.title,
-    this.icon,
-    this.route,
-    this.subtitle,
-    this.tone, {
-    this.badgeKey,
-  });
-
-  final String title;
-  final IconData icon;
-  final String route;
-  final String subtitle;
-  final AVITStatusTone tone;
-  final String? badgeKey;
 }

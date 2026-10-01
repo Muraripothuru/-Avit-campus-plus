@@ -26,16 +26,20 @@ import 'features/auth/welcome_screen.dart';
 import 'features/campus_services/cafeteria_screen.dart';
 import 'features/campus_services/campus_map_screen.dart';
 import 'features/campus_services/gate_pass_screen.dart';
+import 'features/campus_services/health_centre_screen.dart';
 import 'features/campus_services/hostel_screen.dart';
 import 'features/campus_services/library_screen.dart';
+import 'features/campus_services/lost_found_screen.dart';
 import 'features/campus_services/smart_queue_screen.dart';
 import 'features/campus_services/service_request_screen.dart';
 import 'features/campus_services/transport_screen.dart';
 import 'features/campus_services/visitor_pass_screen.dart';
+import 'features/profile/edit_profile_screen.dart';
 import 'features/safety/complaints_screen.dart';
 import 'features/safety/emergency_screen.dart';
 import 'features/safety/report_incident_screen.dart';
 import 'features/safety/scanner_screen.dart';
+import 'features/search/search_screen.dart';
 import 'features/staff/admin_dashboard_screen.dart';
 import 'features/staff/announcements_screen.dart';
 import 'features/staff/audit_log_screen.dart';
@@ -150,6 +154,11 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       Routes.library => const LibraryScreen(),
       Routes.cafeteria => const CafeteriaScreen(),
       Routes.hostel => const HostelScreen(),
+      Routes.lostFound => const LostFoundScreen(),
+      Routes.healthCentre => const HealthCentreScreen(),
+
+      // Discovery
+      Routes.search => const SearchScreen(),
 
       // Safety
       Routes.emergency => const EmergencyScreen(),
@@ -170,6 +179,7 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       Routes.about => const AboutScreen(),
       Routes.privacy => const PrivacyScreen(),
       Routes.loginActivity => const LoginActivityScreen(),
+      Routes.editProfile => const EditProfileScreen(),
 
       _ => const WelcomeScreen(),
     };

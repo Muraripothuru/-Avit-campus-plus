@@ -306,9 +306,12 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Persists the editable profile fields through the auth repository and
+  /// republishes the signed-in user so every listening screen updates.
   Future<bool> updateProfile(AppUser updated) async {
+    if (_user == null) return false;
     return (await _run<bool>(() async {
-      _user = updated;
+      _user = await deps.auth.updateProfile(updated);
       return true;
     })) ?? false;
   }

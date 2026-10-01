@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/user.dart';
+import '../../widgets/avit_avatar.dart';
 import '../../widgets/avit_cards.dart';
 import '../../widgets/avit_feedback.dart';
 
@@ -44,6 +45,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           AVITSectionHeader(
             title: 'Account',
             subtitle: 'Your AVIT identity and verification',
+            actionLabel: 'Edit',
+            onAction: () => Navigator.pushNamed(context, Routes.editProfile),
           ),
           AVITCard(
             child: Column(
@@ -223,27 +226,7 @@ class _ProfileHeader extends StatelessWidget {
             children: <Widget>[
               Hero(
                 tag: 'avit-profile-avatar',
-                child: Container(
-                  width: 68,
-                  height: 68,
-                  decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.16),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.white.withValues(alpha: 0.5),
-                      width: 1.5,
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    Formatters.initials(user.fullName),
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+                child: AVITAvatar(user: user, radius: 34, onDark: true),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

@@ -1,6 +1,7 @@
 import '../../models/announcement.dart';
 import '../../models/app_notification.dart';
 import '../../models/campus_event.dart';
+import '../../models/campus_services.dart';
 import '../../models/pass.dart';
 import '../../models/safety.dart';
 import 'demo_catalog.dart';
@@ -24,6 +25,8 @@ class LocalStore {
   late List<Announcement> announcements;
   late List<Complaint> complaints;
   late List<EmergencyRequest> emergencies;
+  late List<LostFoundItem> lostFoundItems;
+  late List<HealthAppointment> healthAppointments;
   late List<String> usedQrNonces;
   final Map<String, int> queueTokens = <String, int>{};
 
@@ -60,6 +63,39 @@ class LocalStore {
       ),
     ];
     emergencies = <EmergencyRequest>[];
+    lostFoundItems = DemoCatalog.lostFoundItems();
+    healthAppointments = <HealthAppointment>[
+      HealthAppointment(
+        id: 'ha_1',
+        serviceId: 'hs_4',
+        serviceName: 'Counselling',
+        patientName: DemoCatalog.student.fullName,
+        studentId: DemoCatalog.student.studentId ?? '',
+        scheduledFor: DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day,
+        ).add(const Duration(days: 2, hours: 11)),
+        reason: 'Exam stress — sleep has been poor for two weeks.',
+        createdAt: DateTime.now().subtract(const Duration(days: 3)),
+      ),
+      HealthAppointment(
+        id: 'ha_2',
+        serviceId: 'hs_1',
+        serviceName: 'General Consultation',
+        patientName: DemoCatalog.student.fullName,
+        studentId: DemoCatalog.student.studentId ?? '',
+        scheduledFor: DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day,
+        ).subtract(const Duration(days: 12, hours: -9)),
+        reason: 'Fever and sore throat.',
+        createdAt: DateTime.now().subtract(const Duration(days: 14)),
+        status: HealthAppointmentStatus.completed,
+        note: 'Viral fever. Rest and fluids for three days.',
+      ),
+    ];
     usedQrNonces = <String>[];
   }
 

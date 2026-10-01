@@ -959,6 +959,144 @@ abstract final class DemoCatalog {
     ),
   ];
 
+  // -------------------------------------------------------- lost & found
+  static List<LostFoundItem> lostFoundItems() => <LostFoundItem>[
+    LostFoundItem(
+      id: 'lf_1',
+      kind: LostFoundKind.lost,
+      title: 'Black wireless earbuds in a grey case',
+      category: 'Electronics',
+      description:
+          'Left on the study table near the reading room. Case has a small '
+          'scratch on the lid.',
+      location: 'Central Library, First Floor',
+      reportedBy: DemoCatalog.student.fullName,
+      reportedById: DemoCatalog.student.studentId ?? '',
+      createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 4)),
+      contact: '98400 11223',
+    ),
+    LostFoundItem(
+      id: 'lf_2',
+      kind: LostFoundKind.found,
+      title: 'AVIT college ID card — Rahul S.',
+      category: 'Documents & ID',
+      description:
+          'Picked up beside the cafeteria queue. Handed to the help desk, '
+          'claim with any photo ID.',
+      location: 'Food Court, Block A',
+      reportedBy: 'Cafeteria Staff',
+      reportedById: 'cafeteria_1',
+      createdAt: DateTime.now().subtract(const Duration(hours: 9)),
+      contact: 'Help Desk, Admin Block',
+    ),
+    LostFoundItem(
+      id: 'lf_3',
+      kind: LostFoundKind.lost,
+      title: 'Navy blue hoodie with house badge',
+      category: 'Clothing',
+      description: 'Wore it for the evening practice, left it in the changing room.',
+      location: 'Sports Complex',
+      reportedBy: 'Ananya K.',
+      reportedById: 'AVIT2023CS1004',
+      createdAt: DateTime.now().subtract(const Duration(days: 3)),
+      contact: 'ananya.k@avit.ac.in',
+    ),
+    LostFoundItem(
+      id: 'lf_4',
+      kind: LostFoundKind.found,
+      title: 'Bunch of keys with a red keyring',
+      category: 'Keys',
+      description: 'Three keys and a hostel tag. With the security desk since morning.',
+      location: 'Main Gate',
+      reportedBy: 'Campus Security',
+      reportedById: 'security_desk',
+      createdAt: DateTime.now().subtract(const Duration(days: 2, hours: 6)),
+      contact: 'Security Cabin, Main Gate',
+    ),
+    LostFoundItem(
+      id: 'lf_5',
+      kind: LostFoundKind.lost,
+      title: 'Scientific calculator (Casio fx-991)',
+      category: 'Books & Stationery',
+      description: 'Left in drawer 12 after the measurements lab.',
+      location: 'Physics Lab, Block C',
+      reportedBy: DemoCatalog.student.fullName,
+      reportedById: DemoCatalog.student.studentId ?? '',
+      createdAt: DateTime.now().subtract(const Duration(hours: 20)),
+      status: LostFoundStatus.claimed,
+      claimedBy: 'Help Desk, Admin Block',
+      claimedAt: DateTime.now().subtract(const Duration(hours: 3)),
+      contact: '98400 11223',
+    ),
+  ];
+
+  // ------------------------------------------------------- health centre
+  static List<HealthService> healthServices() => const <HealthService>[
+    HealthService(
+      id: 'hs_1',
+      name: 'General Consultation',
+      description: 'Fever, infection, referral and routine check-ups with the '
+          'campus physician.',
+      location: 'Health Centre, Ground Floor, Admin Block',
+      hours: 'Mon–Sat · 09:00 – 17:00',
+      fee: 0,
+      phone: '0413 2456 700',
+    ),
+    HealthService(
+      id: 'hs_2',
+      name: 'First Aid & Dressing',
+      description: 'Wound care, sprains and immediate first-aid support.',
+      location: 'Health Centre, Room 4',
+      hours: 'Mon–Sat · 08:00 – 20:00',
+      fee: 0,
+      phone: '0413 2456 701',
+      walkIn: true,
+    ),
+    HealthService(
+      id: 'hs_3',
+      name: 'Physiotherapy',
+      description: 'Sports injuries, posture correction and rehabilitation '
+          'sessions.',
+      location: 'Sports Complex, Annex',
+      hours: 'Tue, Thu, Sat · 10:00 – 16:00',
+      fee: 150,
+      phone: '0413 2456 702',
+      walkIn: false,
+    ),
+    HealthService(
+      id: 'hs_4',
+      name: 'Counselling',
+      description: 'Confidential sessions for stress, exam pressure and '
+          'personal well-being.',
+      location: 'Counselling Room, Student Centre',
+      hours: 'Mon–Fri · 11:00 – 18:00',
+      fee: 0,
+      phone: '0413 2456 703',
+      walkIn: false,
+    ),
+    HealthService(
+      id: 'hs_5',
+      name: 'Dental Care',
+      description: 'Consultation, cleaning and emergency dental relief.',
+      location: 'Health Centre, Room 7',
+      hours: 'Wed & Fri · 10:00 – 15:00',
+      fee: 200,
+      phone: '0413 2456 704',
+      walkIn: false,
+    ),
+    HealthService(
+      id: 'hs_6',
+      name: 'Annual Health Check-up',
+      description: 'Blood work, vision and BMI screening before placement '
+          'season.',
+      location: 'Health Centre, Lab',
+      hours: 'By appointment only',
+      fee: 0,
+      phone: '0413 2456 705',
+      walkIn: false,
+    ),
+  ];
+
   // ------------------------------------------------------ helper functions
   static DateTime _nextDate(int daysAhead, int hour, int minute) {
     final DateTime base = DateTime.now().add(Duration(days: daysAhead));
