@@ -967,6 +967,7 @@ class _QuickServices extends StatelessWidget {
               icon: icon,
               tone: tone,
               imageAsset: image,
+              metallic: true,
               onTap: () => Navigator.pushNamed(context, route),
             ),
           ),

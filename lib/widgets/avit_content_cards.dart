@@ -19,6 +19,7 @@ class AVITServiceCard extends StatelessWidget {
     this.tone = AVITStatusTone.brand,
     this.badge,
     this.imageAsset,
+    this.metallic = false,
   });
 
   final String title;
@@ -30,6 +31,9 @@ class AVITServiceCard extends StatelessWidget {
 
   /// Example image that fills the entire tile; falls back to [icon].
   final String? imageAsset;
+
+  /// Wraps the tile in the metallic silver border treatment.
+  final bool metallic;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +50,7 @@ class AVITServiceCard extends StatelessWidget {
     if (imageAsset != null) {
       return AVITAnimatedCard(
         onTap: onTap,
+        metallic: metallic,
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
@@ -87,6 +92,7 @@ class AVITServiceCard extends StatelessWidget {
 
     return AVITAnimatedCard(
       onTap: onTap,
+      metallic: metallic,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.md,

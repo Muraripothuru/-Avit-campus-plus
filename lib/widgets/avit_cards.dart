@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import 'avit_metallic_border.dart';
 
 /// Rounded card with soft shadow — the base surface of AVIT BlueFlow.
 class AVITCard extends StatelessWidget {
@@ -71,6 +72,8 @@ class AVITAnimatedCard extends StatefulWidget {
     this.padding = AppSpacing.cardPadding,
     this.color,
     this.scaleDown = 0.97,
+    this.metallic = false,
+    this.metallicAccent,
   });
 
   final Widget child;
@@ -78,6 +81,12 @@ class AVITAnimatedCard extends StatefulWidget {
   final EdgeInsetsGeometry padding;
   final Color? color;
   final double scaleDown;
+
+  /// Replaces the plain border + shadow with [AVITMetallicBorder].
+  final bool metallic;
+
+  /// Accent used by [metallic]; defaults to the brand royal blue.
+  final Color? metallicAccent;
 
   @override
   State<AVITAnimatedCard> createState() => _AVITAnimatedCardState();
@@ -93,6 +102,32 @@ class _AVITAnimatedCardState extends State<AVITAnimatedCard> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // When [AVITAnimatedCard.metallic] is on the wrapper owns the surface,
+    // the glow and the outline, so the container only keeps the padding and
+    // reserves the 1px border box to leave the geometry untouched.
+    final Widget card = AnimatedContainer(
+      duration: const Duration(milliseconds: 140),
+      curve: Curves.easeOut,
+      padding: widget.padding,
+      decoration: widget.metallic
+          ? BoxDecoration(
+              borderRadius: AppRadius.card,
+              border: Border.all(color: const Color(0x00000000)),
+            )
+          : BoxDecoration(
+              color:
+                  widget.color ??
+                  (isDark ? AppColors.darkCard : AppColors.white),
+              borderRadius: AppRadius.card,
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.border,
+              ),
+              boxShadow: _pressed ? AppShadow.subtle : AppShadow.soft,
+            ),
+      child: widget.child,
+    );
+
     return GestureDetector(
       onTapDown: widget.onTap == null ? null : (_) => _set(true),
       onTapUp: widget.onTap == null
@@ -106,21 +141,12 @@ class _AVITAnimatedCardState extends State<AVITAnimatedCard> {
         scale: _pressed ? widget.scaleDown : 1,
         duration: const Duration(milliseconds: 110),
         curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOut,
-          padding: widget.padding,
-          decoration: BoxDecoration(
-            color:
-                widget.color ?? (isDark ? AppColors.darkCard : AppColors.white),
-            borderRadius: AppRadius.card,
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.border,
-            ),
-            boxShadow: _pressed ? AppShadow.subtle : AppShadow.soft,
-          ),
-          child: widget.child,
-        ),
+        child: widget.metallic
+            ? AVITMetallicBorder(
+                accent: widget.metallicAccent ?? AppColors.royalBlue,
+                child: card,
+              )
+            : card,
       ),
     );
   }
