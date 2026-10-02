@@ -326,6 +326,7 @@ class _AppShellState extends State<AppShell> {
         return FloatingActionButton(
           tooltip: 'Emergency',
           backgroundColor: AppColors.danger,
+          foregroundColor: AppColors.white,
           onPressed: _handleFab,
           child: const Icon(Icons.emergency_rounded),
         );

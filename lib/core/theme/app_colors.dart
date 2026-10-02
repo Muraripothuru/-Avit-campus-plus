@@ -56,11 +56,13 @@ abstract final class AppColors {
   /// Warm white — cards, bars and inputs floated on the cream canvas.
   static const Color surface = Color(0xFFFFFDF8);
 
-  /// Muted cream — disabled fills, neutral chips, skeletons.
-  static const Color surfaceMuted = Color(0xFFEFE9DB);
+  /// Deeper cream — disabled fills, neutral chips, skeletons. Read against
+  /// the [surface] cards so the linen shows through wherever content rests.
+  static const Color surfaceMuted = Color(0xFFECE5D5);
 
-  /// Warm hairline.
-  static const Color border = Color(0xFFE3DCCB);
+  /// Cool cobalt hairline so every card, field and divider carries the
+  /// brand colour.
+  static const Color border = Color(0xFFDCE4F5);
 
   /// Warm neutrals so text sits comfortably on cream.
   static const Color textPrimary = Color(0xFF22201A);

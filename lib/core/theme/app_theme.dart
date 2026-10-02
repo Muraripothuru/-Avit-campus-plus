@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 
-/// AVIT BlueFlow typography.
-///
-/// Built on the platform default font (Roboto / SF) so the app stays fast and
-/// avoids bundling large font binaries, but with a heavily customised scale:
-/// large readable headings, compact body copy for information cards.
+/// AVIT Cobalt typography: deep-cobalt headings over warm body copy.
 abstract final class AppTypography {
   static const String? fontFamily = null; // platform default (Roboto / SF)
 
@@ -17,52 +13,52 @@ abstract final class AppTypography {
       height: 1.15,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.8,
-      color: AppColors.textPrimary,
+      color: AppColors.navy,
     ),
     displayMedium: TextStyle(
       fontSize: 32,
       height: 1.2,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.5,
-      color: AppColors.textPrimary,
+      color: AppColors.navy,
     ),
     headlineLarge: TextStyle(
       fontSize: 28,
       height: 1.25,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.4,
-      color: AppColors.textPrimary,
+      color: AppColors.navy,
     ),
     headlineMedium: TextStyle(
       fontSize: 24,
       height: 1.3,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.3,
-      color: AppColors.textPrimary,
+      color: AppColors.navy,
     ),
     headlineSmall: TextStyle(
       fontSize: 20,
       height: 1.35,
       fontWeight: FontWeight.w600,
-      color: AppColors.textPrimary,
+      color: AppColors.navy,
     ),
     titleLarge: TextStyle(
       fontSize: 18,
       height: 1.4,
       fontWeight: FontWeight.w700,
-      color: AppColors.textPrimary,
+      color: AppColors.navy,
     ),
     titleMedium: TextStyle(
       fontSize: 16,
       height: 1.4,
       fontWeight: FontWeight.w600,
-      color: AppColors.textPrimary,
+      color: AppColors.navy,
     ),
     titleSmall: TextStyle(
       fontSize: 14,
       height: 1.4,
       fontWeight: FontWeight.w600,
-      color: AppColors.textPrimary,
+      color: AppColors.navy,
     ),
     bodyLarge: TextStyle(
       fontSize: 16,
@@ -263,25 +259,29 @@ abstract final class AppTheme {
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
-        foregroundColor: isDark
-            ? AppColors.darkTextPrimary
-            : AppColors.textPrimary,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.cobalt,
+        foregroundColor: isDark ? AppColors.darkTextPrimary : AppColors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: textTheme.titleLarge,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: isDark ? AppColors.darkTextPrimary : AppColors.white,
+        ),
         iconTheme: IconThemeData(
-          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          color: isDark ? AppColors.darkTextPrimary : AppColors.white,
+        ),
+        actionsIconTheme: IconThemeData(
+          color: isDark ? AppColors.darkTextPrimary : AppColors.white,
         ),
         shape: Border(
           bottom: BorderSide(
-            color: isDark ? AppColors.darkBorder : AppColors.border,
+            color: isDark ? AppColors.darkBorder : AppColors.tangerine,
+            width: isDark ? 1 : 1.5,
           ),
         ),
       ),
       drawerTheme: DrawerThemeData(
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.background,
         elevation: 0,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
@@ -306,8 +306,8 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
+        backgroundColor: AppColors.tangerine,
+        foregroundColor: isDark ? AppColors.navyDeep : AppColors.textPrimary,
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
@@ -451,11 +451,11 @@ abstract final class AppTheme {
         ),
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.white,
+        labelColor: AppColors.textPrimary,
         unselectedLabelColor: AppColors.textSecondary,
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.sm),
-          gradient: AppColors.primaryGradient,
+          color: AppColors.tangerine,
         ),
         dividerColor: Colors.transparent,
       ),

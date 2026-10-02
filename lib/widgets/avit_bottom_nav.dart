@@ -42,7 +42,7 @@ class AVITBottomNavigation extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.white,
+        color: isDark ? AppColors.darkSurface : AppColors.surface,
         border: Border(
           top: BorderSide(
             color: isDark ? AppColors.darkBorder : AppColors.border,
@@ -160,7 +160,7 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
                     decoration: BoxDecoration(
                       color: Color.lerp(
                         Colors.transparent,
-                        AppColors.lightBlue,
+                        AppColors.primaryBlue,
                         t,
                       ),
                       borderRadius: AppRadius.pillShape,
@@ -172,7 +172,7 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
                       child: Icon(
                         widget.tab.icon,
                         size: 22,
-                        color: Color.lerp(inactive, active, t),
+                        color: Color.lerp(inactive, AppColors.white, t),
                       ),
                     ),
                   ),

@@ -39,6 +39,11 @@ class AVITAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color bg =
+        backgroundColor ?? (isDark ? AppColors.darkSurface : AppColors.cobalt);
+    final Color fg =
+        fgColor ?? (isDark ? AppColors.darkTextPrimary : AppColors.white);
 
     final Widget heading = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +54,7 @@ class AVITAppBar extends StatelessWidget implements PreferredSizeWidget {
           title,
           style: text.titleLarge?.copyWith(
             fontWeight: FontWeight.w700,
-            color: fgColor,
+            color: fg,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -57,7 +62,7 @@ class AVITAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (subtitle != null)
           Text(
             subtitle!,
-            style: text.bodySmall?.copyWith(color: fgColor),
+            style: text.bodySmall?.copyWith(color: fg),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -79,8 +84,8 @@ class AVITAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: automaticallyImplyLeading,
       actions: actions,
       bottom: bottom,
-      backgroundColor: backgroundColor,
-      foregroundColor: fgColor,
+      backgroundColor: bg,
+      foregroundColor: fg,
     );
   }
 }

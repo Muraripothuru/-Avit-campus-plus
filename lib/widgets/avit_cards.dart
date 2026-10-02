@@ -182,19 +182,35 @@ class AVITSectionHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Expanded(
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(title, style: text.titleLarge),
-                if (subtitle != null) ...<Widget>[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: text.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                Container(
+                  width: 4,
+                  height: subtitle != null ? 44 : 26,
+                  margin: const EdgeInsets.only(right: AppSpacing.sm, top: 3),
+                  decoration: const BoxDecoration(
+                    color: AppColors.tangerine,
+                    borderRadius: BorderRadius.all(Radius.circular(4)),
                   ),
-                ],
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(title, style: text.titleLarge),
+                      if (subtitle != null) ...<Widget>[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: text.bodySmall,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

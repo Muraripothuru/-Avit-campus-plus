@@ -108,9 +108,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen>
     }
   }
 
-  List<CampusEvent> get _mine => _events
-      .where((CampusEvent e) => e.registered)
-      .toList(growable: false);
+  List<CampusEvent> get _mine =>
+      _events.where((CampusEvent e) => e.registered).toList(growable: false);
 
   @override
   Widget build(BuildContext context) {
@@ -123,9 +122,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen>
           color: Colors.transparent,
           child: TabBar(
             controller: _tab,
-            labelColor: AppColors.primaryBlue,
+            labelColor: AppColors.textPrimary,
             unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primaryBlue,
+            indicatorColor: AppColors.tangerine,
             indicatorWeight: 3,
             labelStyle: text.titleSmall,
             tabs: const <Widget>[
@@ -139,24 +138,15 @@ class _ActivitiesScreenState extends State<ActivitiesScreen>
           child: _loading
               ? const LoadingList(itemCount: 4)
               : _error != null
-                  ? AVITErrorState(message: _error!, onRetry: _load)
-                  : TabBarView(
-                      controller: _tab,
-                      children: <Widget>[
-                        AVITRefresh(
-                          onRefresh: _load,
-                          child: _buildEvents(),
-                        ),
-                        AVITRefresh(
-                          onRefresh: _load,
-                          child: _buildClubs(),
-                        ),
-                        AVITRefresh(
-                          onRefresh: _load,
-                          child: _buildMine(),
-                        ),
-                      ],
-                    ),
+              ? AVITErrorState(message: _error!, onRetry: _load)
+              : TabBarView(
+                  controller: _tab,
+                  children: <Widget>[
+                    AVITRefresh(onRefresh: _load, child: _buildEvents()),
+                    AVITRefresh(onRefresh: _load, child: _buildClubs()),
+                    AVITRefresh(onRefresh: _load, child: _buildMine()),
+                  ],
+                ),
         ),
       ],
     );
@@ -180,9 +170,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen>
                 onSelected: (_) => setState(() => _filter = _filters[index]),
                 selectedColor: AppColors.lightBlue,
                 labelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: selected ? AppColors.primaryBlue : null,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    ),
+                  color: selected ? AppColors.primaryBlue : null,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
                 side: BorderSide(
                   color: selected ? AppColors.primaryBlue : AppColors.border,
                 ),
@@ -357,7 +347,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen>
     scope.state.toggleEventFavourite(e.id);
     setState(() {
       final int i = _events.indexWhere((CampusEvent x) => x.id == e.id);
-      if (i >= 0) _events[i] = _events[i].copyWith(favourite: !_events[i].favourite);
+      if (i >= 0) {
+        _events[i] = _events[i].copyWith(favourite: !_events[i].favourite);
+      }
     });
     showAVITSnackBar(
       context,
@@ -373,7 +365,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen>
     AppScope.of(context).state.toggleClubFollow(club.id);
     setState(() {
       final int i = _clubs.indexWhere((Club x) => x.id == club.id);
-      if (i >= 0) _clubs[i] = _clubs[i].copyWith(following: !_clubs[i].following);
+      if (i >= 0) {
+        _clubs[i] = _clubs[i].copyWith(following: !_clubs[i].following);
+      }
     });
     showAVITSnackBar(
       context,
