@@ -207,27 +207,25 @@ abstract final class AppTheme {
     final bool isDark = brightness == Brightness.dark;
 
     final ColorScheme scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primaryBlue,
+      seedColor: AppColors.cobalt,
       brightness: brightness,
       primary: isDark ? AppColors.skyBlue : AppColors.primaryBlue,
       onPrimary: isDark ? AppColors.navyDeep : AppColors.white,
-      secondary: isDark ? AppColors.lightBlue : AppColors.navy,
-      onSecondary: isDark ? AppColors.navyDeep : AppColors.white,
+      secondary: isDark ? AppColors.skyBlue : AppColors.tangerine,
+      onSecondary: isDark ? AppColors.navyDeep : AppColors.textPrimary,
       surface: isDark ? AppColors.darkSurface : AppColors.surface,
-      onSurface: isDark
-          ? AppColors.darkTextPrimary
-          : AppColors.textPrimary,
+      onSurface: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
       error: AppColors.danger,
       onError: AppColors.white,
       outline: isDark ? AppColors.darkBorder : AppColors.border,
       surfaceContainerHighest: isDark
           ? AppColors.darkCard
           : AppColors.surfaceMuted,
-      surfaceContainerLow: isDark ? AppColors.darkSurface : AppColors.white,
+      surfaceContainerLow: isDark ? AppColors.darkSurface : AppColors.surface,
       surfaceContainer: isDark ? AppColors.darkCard : AppColors.surfaceMuted,
       surfaceContainerLowest: isDark
           ? AppColors.darkBackground
-          : AppColors.white,
+          : AppColors.surface,
       surfaceContainerHigh: isDark
           ? AppColors.darkCard
           : AppColors.surfaceMuted,
@@ -252,7 +250,7 @@ abstract final class AppTheme {
       highlightColor: (isDark ? AppColors.skyBlue : AppColors.primaryBlue)
           .withValues(alpha: 0.05),
       dividerColor: isDark ? AppColors.darkBorder : AppColors.border,
-      canvasColor: isDark ? AppColors.darkSurface : AppColors.white,
+      canvasColor: isDark ? AppColors.darkSurface : AppColors.surface,
       cardTheme: CardThemeData(
         color: isDark ? AppColors.darkCard : AppColors.surface,
         elevation: 0,
@@ -265,7 +263,7 @@ abstract final class AppTheme {
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
         foregroundColor: isDark
             ? AppColors.darkTextPrimary
             : AppColors.textPrimary,
@@ -274,9 +272,7 @@ abstract final class AppTheme {
         centerTitle: false,
         titleTextStyle: textTheme.titleLarge,
         iconTheme: IconThemeData(
-          color: isDark
-              ? AppColors.darkTextPrimary
-              : AppColors.textPrimary,
+          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
         ),
         shape: Border(
           bottom: BorderSide(
@@ -285,14 +281,14 @@ abstract final class AppTheme {
         ),
       ),
       drawerTheme: DrawerThemeData(
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
         elevation: 0,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
         selectedItemColor: AppColors.primaryBlue,
         unselectedItemColor: isDark
             ? AppColors.darkTextSecondary
@@ -313,13 +309,11 @@ abstract final class AppTheme {
         backgroundColor: AppColors.primaryBlue,
         foregroundColor: AppColors.white,
         elevation: 6,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? AppColors.darkCard : AppColors.white,
+        fillColor: isDark ? AppColors.darkCard : AppColors.surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,

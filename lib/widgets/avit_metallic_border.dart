@@ -102,7 +102,7 @@ class _AVITMetallicBorderState extends State<AVITMetallicBorder>
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final BorderRadius radius = widget.borderRadius ?? AppRadius.card;
     final Color base =
-        widget.surface ?? (isDark ? AppColors.darkCard : AppColors.white);
+        widget.surface ?? (isDark ? AppColors.darkCard : AppColors.surface);
     final Color shade = (isDark
         ? Color.lerp(base, AppColors.navyDeep, 0.45)!
         : Color.lerp(base, AppColors.navy, 0.05)!);

@@ -96,9 +96,13 @@ class _LogoMark extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         shape: BoxShape.circle,
+        border: Border.all(
+          color: AppColors.tangerine,
+          width: (size * 0.075).clamp(1.5, 4).toDouble(),
+        ),
       ),
       child: Center(
         child: Text(

@@ -50,7 +50,7 @@ class AVITBottomNavigation extends StatelessWidget {
         ),
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x0F0A1F44),
+            color: Color(0x0F0E2F73),
             blurRadius: 12,
             offset: Offset(0, -4),
           ),

@@ -90,16 +90,15 @@ class _CafeteriaScreenState extends State<CafeteriaScreen> {
           padding: AppSpacing.screenPadding,
           children: <Widget>[
             AVITCard(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[Color(0xFF12924F), Color(0xFF1E63E8)],
-              ),
+              gradient: AppColors.primaryGradient,
               borderColor: Colors.transparent,
               child: Row(
                 children: <Widget>[
-                  const Icon(Icons.restaurant_rounded,
-                      color: AppColors.white, size: 32),
+                  const Icon(
+                    Icons.restaurant_rounded,
+                    color: AppColors.white,
+                    size: 32,
+                  ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
@@ -146,8 +145,9 @@ class _CafeteriaScreenState extends State<CafeteriaScreen> {
                         selectedColor: AppColors.lightBlue,
                         labelStyle: text.labelMedium?.copyWith(
                           color: _meal == meal ? AppColors.primaryBlue : null,
-                          fontWeight:
-                              _meal == meal ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: _meal == meal
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                         ),
                         side: BorderSide(
                           color: _meal == meal

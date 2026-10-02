@@ -17,7 +17,7 @@ void showAVITSnackBar(
   final Color accent = switch (tone) {
     AVITSnackTone.success => const Color(0xFF4ADE80),
     AVITSnackTone.error => const Color(0xFFFF8A93),
-    AVITSnackTone.warning => const Color(0xFFFBBF24),
+    AVITSnackTone.warning => const Color(0xFFFFA762),
     AVITSnackTone.neutral => AppColors.skyBlue,
   };
 
@@ -50,9 +50,7 @@ void showAVITSnackBar(
                 textColor: accent,
                 onPressed: onAction ?? () {},
               ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
 }

@@ -73,14 +73,14 @@ class _CampusMapScreenState extends State<CampusMapScreen> {
   }
 
   List<String> get _categories => <String>{
-        'All',
-        for (final CampusLocation p in _places) p.category,
-      }.toList();
+    'All',
+    for (final CampusLocation p in _places) p.category,
+  }.toList();
 
   List<CampusLocation> get _visible => _places.where((CampusLocation p) {
-        final bool okCat = _category == 'All' || p.category == _category;
-        return okCat && p.matches(_query);
-      }).toList();
+    final bool okCat = _category == 'All' || p.category == _category;
+    return okCat && p.matches(_query);
+  }).toList();
 
   CampusLocation? get _selected {
     for (final CampusLocation p in _places) {
@@ -136,8 +136,9 @@ class _CampusMapScreenState extends State<CampusMapScreen> {
                         selectedColor: AppColors.lightBlue,
                         labelStyle: text.labelMedium?.copyWith(
                           color: selected ? AppColors.primaryBlue : null,
-                          fontWeight:
-                              selected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                         ),
                         side: BorderSide(
                           color: selected
@@ -173,7 +174,8 @@ class _CampusMapScreenState extends State<CampusMapScreen> {
                         double best = 0.06;
                         for (final CampusLocation p in _visible) {
                           final double d =
-                              ((p.x - ux) * (p.x - ux) + (p.y - uy) * (p.y - uy))
+                              ((p.x - ux) * (p.x - ux) +
+                                      (p.y - uy) * (p.y - uy))
                                   .abs();
                           if (d < best) {
                             best = d;
@@ -189,13 +191,10 @@ class _CampusMapScreenState extends State<CampusMapScreen> {
                         painter: _CampusPainter(
                           places: _visible,
                           selectedId: _selectedId,
-                          isDark: Theme.of(context).brightness ==
-                              Brightness.dark,
+                          isDark:
+                              Theme.of(context).brightness == Brightness.dark,
                         ),
-                        size: Size(
-                          constraints.maxWidth,
-                          constraints.maxHeight,
-                        ),
+                        size: Size(constraints.maxWidth, constraints.maxHeight),
                       ),
                     );
                   },
@@ -253,13 +252,9 @@ class _CampusMapScreenState extends State<CampusMapScreen> {
           children: <Widget>[
             Text(place.name, style: Theme.of(ctx).textTheme.titleLarge),
             const SizedBox(height: 4),
-            Text(
-              place.category,
-              style: Theme.of(ctx).textTheme.bodySmall,
-            ),
+            Text(place.category, style: Theme.of(ctx).textTheme.bodySmall),
             const SizedBox(height: AppSpacing.md),
-            Text(place.description,
-                style: Theme.of(ctx).textTheme.bodyMedium),
+            Text(place.description, style: Theme.of(ctx).textTheme.bodyMedium),
             const SizedBox(height: AppSpacing.lg),
             AVITButton(
               label: 'Done',
@@ -361,7 +356,7 @@ class _CampusPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Color base = isDark ? AppColors.darkCard : AppColors.paleBlue;
-    final Color path = isDark ? AppColors.darkBorder : const Color(0xFFD9E4F7);
+    final Color path = isDark ? AppColors.darkBorder : const Color(0xFFD6E1FB);
     final Color block = isDark ? AppColors.darkSurface : AppColors.white;
 
     canvas.drawRRect(
@@ -371,20 +366,29 @@ class _CampusPainter extends CustomPainter {
 
     // Lawn blocks.
     final Paint lawn = Paint()
-      ..color = (isDark ? AppColors.success : AppColors.success)
-          .withValues(alpha: 0.14);
+      ..color = (isDark ? AppColors.success : AppColors.success).withValues(
+        alpha: 0.14,
+      );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.06, size.height * 0.08,
-            size.width * 0.3, size.height * 0.24),
+        Rect.fromLTWH(
+          size.width * 0.06,
+          size.height * 0.08,
+          size.width * 0.3,
+          size.height * 0.24,
+        ),
         const Radius.circular(12),
       ),
       lawn,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.6, size.height * 0.6,
-            size.width * 0.32, size.height * 0.3),
+        Rect.fromLTWH(
+          size.width * 0.6,
+          size.height * 0.6,
+          size.width * 0.32,
+          size.height * 0.3,
+        ),
         const Radius.circular(12),
       ),
       lawn,
@@ -410,7 +414,7 @@ class _CampusPainter extends CustomPainter {
     // Building blocks.
     final Paint building = Paint()..color = block;
     final Paint buildingBorder = Paint()
-      ..color = const Color(0xFFC9D6EC)
+      ..color = const Color(0xFFC4D2F1)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     for (int i = 0; i < places.length; i++) {

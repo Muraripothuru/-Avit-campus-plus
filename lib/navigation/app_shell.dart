@@ -93,14 +93,15 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _showQuickActions() {
-    final List<(IconData, String, String)> actions = <(IconData, String, String)>[
-      (Icons.qr_code_scanner_rounded, 'Scan a pass', Routes.scanner),
-      (Icons.qr_code_rounded, 'Gate pass', Routes.gatePass),
-      (Icons.directions_bus_rounded, 'Transport', Routes.transport),
-      (Icons.hourglass_top_rounded, 'Smart queue', Routes.smartQueue),
-      (Icons.map_rounded, 'Campus map', Routes.campusMap),
-      (Icons.emergency_rounded, 'Emergency', Routes.emergency),
-    ];
+    final List<(IconData, String, String)> actions =
+        <(IconData, String, String)>[
+          (Icons.qr_code_scanner_rounded, 'Scan a pass', Routes.scanner),
+          (Icons.qr_code_rounded, 'Gate pass', Routes.gatePass),
+          (Icons.directions_bus_rounded, 'Transport', Routes.transport),
+          (Icons.hourglass_top_rounded, 'Smart queue', Routes.smartQueue),
+          (Icons.map_rounded, 'Campus map', Routes.campusMap),
+          (Icons.emergency_rounded, 'Emergency', Routes.emergency),
+        ];
 
     showModalBottomSheet<void>(
       context: context,
@@ -180,11 +181,7 @@ class _AppShellState extends State<AppShell> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         scope.state.clearError();
-        showAVITSnackBar(
-          context,
-          message: error,
-          tone: AVITSnackTone.error,
-        );
+        showAVITSnackBar(context, message: error, tone: AVITSnackTone.error);
       });
     }
 
@@ -221,17 +218,14 @@ class _AppShellState extends State<AppShell> {
           AVITBadgeButton(
             icon: Icons.notifications_rounded,
             count: unread,
-            onPressed: () => _selectTab(
-              AppTab.values.indexOf(AppTab.alerts),
-            ),
+            onPressed: () => _selectTab(AppTab.values.indexOf(AppTab.alerts)),
           ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: IconButton(
               tooltip: 'Profile',
-              onPressed: () => _selectTab(
-                AppTab.values.indexOf(AppTab.profile),
-              ),
+              onPressed: () =>
+                  _selectTab(AppTab.values.indexOf(AppTab.profile)),
               icon: me == null
                   ? const CircleAvatar(
                       radius: 16,
@@ -423,9 +417,8 @@ class _OfflineBannerState extends State<_OfflineBanner> {
                 Expanded(
                   child: Text(
                     "You're offline. Some information may be outdated.",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF8A5B00),
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: AppColors.tangerineDeep),
                   ),
                 ),
                 TextButton(

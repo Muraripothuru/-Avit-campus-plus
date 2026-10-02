@@ -39,7 +39,7 @@ class AVITCard extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: gradient == null
-            ? (color ?? (isDark ? AppColors.darkCard : AppColors.white))
+            ? (color ?? (isDark ? AppColors.darkCard : AppColors.surface))
             : null,
         gradient: gradient,
         borderRadius: radius,
@@ -118,7 +118,7 @@ class _AVITAnimatedCardState extends State<AVITAnimatedCard> {
           : BoxDecoration(
               color:
                   widget.color ??
-                  (isDark ? AppColors.darkCard : AppColors.white),
+                  (isDark ? AppColors.darkCard : AppColors.surface),
               borderRadius: AppRadius.card,
               border: Border.all(
                 color: isDark ? AppColors.darkBorder : AppColors.border,

@@ -226,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen>
                               'Development mode — use student@avit.ac.in '
                               'with the demo password from the README.',
                               style: text.bodySmall?.copyWith(
-                                color: const Color(0xFF8A5B00),
+                                color: AppColors.tangerineDeep,
                               ),
                             ),
                           ),

@@ -188,12 +188,12 @@ class AVITEventCard extends StatelessWidget {
   final bool compact;
 
   static const List<(IconData, Color)> _covers = <(IconData, Color)>[
-    (Icons.security_rounded, Color(0xFF123C8C)),
-    (Icons.cloud_rounded, Color(0xFF1E63E8)),
+    (Icons.security_rounded, Color(0xFF0E2F73)),
+    (Icons.cloud_rounded, Color(0xFF185ADB)),
     (Icons.sports_soccer_rounded, Color(0xFF12924F)),
     (Icons.music_note_rounded, Color(0xFF7C3AED)),
-    (Icons.work_rounded, Color(0xFF0F766E)),
-    (Icons.smart_toy_rounded, Color(0xFFB45309)),
+    (Icons.work_rounded, Color(0xFFFF8A3D)),
+    (Icons.smart_toy_rounded, Color(0xFF0F766E)),
   ];
 
   (IconData, Color) get _cover {

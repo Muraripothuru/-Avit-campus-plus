@@ -164,7 +164,7 @@ class _CampusIllustration extends StatelessWidget {
                         width: 160,
                         height: 160,
                         decoration: BoxDecoration(
-                          color: AppColors.white.withValues(alpha: 0.08),
+                          color: AppColors.tangerine.withValues(alpha: 0.22),
                           shape: BoxShape.circle,
                         ),
                       ),

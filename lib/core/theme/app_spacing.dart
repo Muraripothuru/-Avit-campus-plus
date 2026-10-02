@@ -52,26 +52,14 @@ abstract final class AppRadius {
 /// Elevation / shadow tokens.
 abstract final class AppShadow {
   static const List<BoxShadow> soft = [
-    BoxShadow(
-      color: Color(0x140A1F44),
-      blurRadius: 16,
-      offset: Offset(0, 6),
-    ),
+    BoxShadow(color: Color(0x140E2F73), blurRadius: 16, offset: Offset(0, 6)),
   ];
 
   static const List<BoxShadow> raised = [
-    BoxShadow(
-      color: Color(0x240A1F44),
-      blurRadius: 24,
-      offset: Offset(0, 10),
-    ),
+    BoxShadow(color: Color(0x240E2F73), blurRadius: 24, offset: Offset(0, 10)),
   ];
 
   static const List<BoxShadow> subtle = [
-    BoxShadow(
-      color: Color(0x0D0A1F44),
-      blurRadius: 8,
-      offset: Offset(0, 3),
-    ),
+    BoxShadow(color: Color(0x0D0E2F73), blurRadius: 8, offset: Offset(0, 3)),
   ];
 }
