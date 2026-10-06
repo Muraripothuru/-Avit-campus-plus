@@ -67,7 +67,7 @@ abstract final class AppColors {
   /// Warm neutrals so text sits comfortably on cream.
   static const Color textPrimary = Color(0xFF22201A);
   static const Color textSecondary = Color(0xFF6B6558);
-  static const Color textTertiary = Color(0xFF8A8474);
+  static const Color textTertiary = Color(0xFF736E60);
   static const Color textOnDark = Color(0xFFFFFFFF);
 
   // --------------------------------------------------------------- status
@@ -83,6 +83,13 @@ abstract final class AppColors {
   static const Color dangerSurface = Color(0xFFFFE9EC);
   static const Color info = Color(0xFF2E7BE5);
   static const Color infoSurface = Color(0xFFE6EEFE);
+
+  /// Ink weights for the status colours above: each clears WCAG AA (4.5:1)
+  /// on its matching `*Surface`, which the brighter fills do not.
+  static const Color successText = Color(0xFF107E44);
+  static const Color warningText = tangerineDeep;
+  static const Color dangerText = Color(0xFFCD2B3C);
+  static const Color infoText = Color(0xFF286AC6);
 
   // ------------------------------------------------------------- gradients
   static const LinearGradient primaryGradient = LinearGradient(

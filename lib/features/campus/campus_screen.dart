@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_state.dart';
@@ -6,8 +6,10 @@ import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_exception.dart';
+import '../../core/utils/snackbar.dart';
 import '../../models/campus_services.dart';
 import '../../navigation/service_catalog.dart';
+import 'service_detail_screen.dart';
 import '../../widgets/avit_cards.dart';
 import '../../widgets/avit_content_cards.dart';
 import '../../widgets/avit_feedback.dart';
@@ -59,7 +61,8 @@ class _CampusScreenState extends State<CampusScreen>
       if (!mounted) return;
       setState(() {
         _locations = places;
-        _pendingPasses = deps.localStore.pendingGatePasses +
+        _pendingPasses =
+            deps.localStore.pendingGatePasses +
             deps.localStore.pendingVisitorPasses;
         _loading = false;
       });
@@ -188,13 +191,13 @@ class _CampusScreenState extends State<CampusScreen>
                         subtitle: service.subtitle,
                         icon: service.icon,
                         tone: service.tone,
+                        heroTag: 'service-icon-${service.title}',
                         badge: service.badgeKey == 'gate'
                             ? _pendingGate
                             : service.badgeKey == 'visitor'
-                                ? _pendingVisitor
-                                : null,
-                        onTap: () =>
-                            Navigator.pushNamed(context, service.route),
+                            ? _pendingVisitor
+                            : null,
+                        onTap: () => _openService(service),
                       ),
                 ],
               ),
@@ -257,11 +260,32 @@ class _CampusScreenState extends State<CampusScreen>
     );
   }
 
+  /// Opens Service Details for the tapped [service] with a direct
+  /// `Navigator.push` + `MaterialPageRoute`, passing the selected object so
+  /// the detail route never hard-codes its content.
+  ///
+  /// The detail route returns `ServiceDetailScreen.resultRequested`, which is
+  /// confirmed here with a SnackBar once it comes back.
+  Future<void> _openService(ServiceEntry service) async {
+    final Object? result = await Navigator.push<Object?>(
+      context,
+      MaterialPageRoute<Object?>(
+        settings: const RouteSettings(name: Routes.serviceDetail),
+        builder: (BuildContext _) => ServiceDetailScreen(service: service),
+      ),
+    );
+    if (!mounted || result != ServiceDetailScreen.resultRequested) return;
+    showAVITSnackBar(
+      context,
+      message: 'Request sent — the ${service.title} team will contact you',
+      tone: AVITSnackTone.success,
+    );
+  }
+
   bool _matches(ServiceEntry service) => service.matches(_query);
 
-  List<CampusLocation> get _matchingLocations => _locations
-      .where((CampusLocation p) => p.matches(_query))
-      .toList();
+  List<CampusLocation> get _matchingLocations =>
+      _locations.where((CampusLocation p) => p.matches(_query)).toList();
 
   bool get _hasAnyResult {
     for (final MapEntry<String, List<ServiceEntry>> entry in _groups.entries) {
@@ -271,14 +295,8 @@ class _CampusScreenState extends State<CampusScreen>
     return _query.isEmpty ? true : _matchingLocations.isNotEmpty;
   }
 
-  int get _pendingGate => AppScope.of(context)
-      .state
-      .deps
-      .localStore
-      .pendingGatePasses;
-  int get _pendingVisitor => AppScope.of(context)
-      .state
-      .deps
-      .localStore
-      .pendingVisitorPasses;
+  int get _pendingGate =>
+      AppScope.of(context).state.deps.localStore.pendingGatePasses;
+  int get _pendingVisitor =>
+      AppScope.of(context).state.deps.localStore.pendingVisitorPasses;
 }

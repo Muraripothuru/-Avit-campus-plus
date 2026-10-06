@@ -47,6 +47,7 @@ import 'features/staff/security_dashboard_screen.dart';
 import 'features/staff/warden_dashboard_screen.dart';
 import 'models/user.dart';
 import 'navigation/app_shell.dart';
+import 'navigation/unknown_route_screen.dart';
 
 /// Composition root and entry point.
 void main() {
@@ -83,8 +84,7 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
         user.role == UserRole.warden || user.role == UserRole.admin,
       Routes.admin ||
       Routes.announcements ||
-      Routes.auditLog =>
-        user.role == UserRole.admin,
+      Routes.auditLog => user.role == UserRole.admin,
       _ => true,
     };
   }
@@ -94,10 +94,7 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
   );
 
   Route<dynamic> _build(RouteSettings settings, Widget screen) =>
-      MaterialPageRoute<dynamic>(
-        settings: settings,
-        builder: (_) => screen,
-      );
+      MaterialPageRoute<dynamic>(settings: settings, builder: (_) => screen);
 
   /// Auth + role guard, then the concrete screen for [settings.name].
   Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -123,9 +120,10 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       Routes.welcome => const WelcomeScreen(),
       Routes.login => const LoginScreen(),
       Routes.signup => const SignUpScreen(),
-      Routes.otp => settings.arguments is OtpArguments
-          ? OtpScreen(arguments: settings.arguments! as OtpArguments)
-          : const LoginScreen(),
+      Routes.otp =>
+        settings.arguments is OtpArguments
+            ? OtpScreen(arguments: settings.arguments! as OtpArguments)
+            : const LoginScreen(),
       Routes.forgotPassword => const ForgotPasswordScreen(),
       Routes.resetPassword => const ForgotPasswordScreen(),
 
@@ -181,10 +179,32 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       Routes.loginActivity => const LoginActivityScreen(),
       Routes.editProfile => const EditProfileScreen(),
 
-      _ => const WelcomeScreen(),
+      _ => UnknownRouteScreen(routeName: name),
     };
 
     return _build(settings, screen);
+  }
+
+  /// Initial stack: the Dashboard sits at the bottom (it is [Routes.dashboard])
+  /// and the branded splash rides on top for the intro. The splash clears the
+  /// stack once the session is known, so Back always reveals the Dashboard
+  /// instead of a second copy of it. Deep links keep a single-entry stack.
+  ///
+  /// The bottom Dashboard route is registered without the auth guard on
+  /// purpose: the splash covers it and then replaces the whole stack with
+  /// Dashboard (signed in) or Welcome (no session), so a signed-out student
+  /// never lands on a protected screen.
+  List<Route<dynamic>> _initialRoutes(String initialRoute) {
+    if (initialRoute != Routes.dashboard) {
+      return <Route<dynamic>>[
+        onGenerateRoute(RouteSettings(name: initialRoute)),
+      ];
+    }
+    const RouteSettings dashboard = RouteSettings(name: Routes.dashboard);
+    return <Route<dynamic>>[
+      _build(dashboard, _shellFor(dashboard)),
+      onGenerateRoute(const RouteSettings(name: Routes.splash)),
+    ];
   }
 
   @override
@@ -202,11 +222,24 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: _state.themeMode,
-          initialRoute: Routes.splash,
+          // The Dashboard is the configured first route; see _initialRoutes
+          // for the splash that opens above it.
+          initialRoute: Routes.dashboard,
+          onGenerateInitialRoutes: _initialRoutes,
+          // Public destinations registered in the routes table. Protected
+          // screens stay behind onGenerateRoute so the auth/role guard can
+          // never be bypassed by a table entry.
+          routes: <String, WidgetBuilder>{
+            Routes.welcome: (_) => const WelcomeScreen(),
+            Routes.login: (_) => const LoginScreen(),
+            Routes.signup: (_) => const SignUpScreen(),
+            Routes.forgotPassword: (_) => const ForgotPasswordScreen(),
+            Routes.resetPassword: (_) => const ForgotPasswordScreen(),
+          },
           onGenerateRoute: onGenerateRoute,
           onUnknownRoute: (RouteSettings settings) => _build(
-            const RouteSettings(name: Routes.welcome),
-            const WelcomeScreen(),
+            settings,
+            UnknownRouteScreen(routeName: settings.name ?? Routes.welcome),
           ),
         ),
       ),
@@ -230,11 +263,7 @@ class _AccessDeniedScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Icon(
-                Icons.lock_rounded,
-                size: 56,
-                color: AppColors.danger,
-              ),
+              const Icon(Icons.lock_rounded, size: 56, color: AppColors.danger),
               const SizedBox(height: 16),
               Text(
                 'Your role does not have access to this section.',
@@ -242,10 +271,7 @@ class _AccessDeniedScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
-              Text(
-                routeName,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text(routeName, style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(),

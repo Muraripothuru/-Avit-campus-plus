@@ -53,6 +53,13 @@ abstract final class ServiceRequestRules {
     return null;
   }
 
+  /// Phone becomes compulsory once "Phone call" is the preferred contact.
+  static String? phoneWhenContactIsCall(String? value) {
+    final String v = (value ?? '').trim();
+    if (v.isEmpty) return 'Add a phone number for the Phone call contact';
+    return optionalPhone(v);
+  }
+
   static String? category(String? value) {
     if (value == null || value.isEmpty) return 'Choose a service category';
     return null;
@@ -79,6 +86,13 @@ abstract final class ServiceRequestRules {
   static String? blockRoom(String? value) {
     if ((value ?? '').trim().isEmpty) {
       return 'Tell us the block and room so the team can reach you';
+    }
+    return null;
+  }
+
+  static String? otherDetails(String? value) {
+    if ((value ?? '').trim().length < 10) {
+      return 'Describe the issue in at least 10 characters';
     }
     return null;
   }
@@ -124,6 +138,24 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     'Transport & Mobility',
     'Accounts & Fees',
     'Health & Counselling',
+    'Lost Student ID Card',
+    'Wi-Fi / Internet',
+    'Dormitory Issue',
+    'Library Access',
+    'Academic Documents',
+    'Payment Question',
+    'Student Account / Login',
+    'Campus Facilities',
+    'Security / Access',
+    'Other',
+  ];
+
+  /// Shortcuts shown as chips under the category dropdown.
+  static const List<String> popularCategories = <String>[
+    'Wi-Fi / Internet',
+    'Lost Student ID Card',
+    'Academic Documents',
+    'Other',
   ];
   static const List<String> urgencies = <String>['Low', 'Normal', 'High'];
   static const List<String> contacts = <String>[
@@ -139,6 +171,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   ];
 
   static const String facilitiesCategory = 'Facilities & Maintenance';
+  static const String otherCategory = 'Other';
 
   GlobalKey<FormState> _detailsKey = GlobalKey<FormState>();
   GlobalKey<FormState> _reviewKey = GlobalKey<FormState>();
@@ -196,6 +229,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
       'subject',
       'details',
       'block',
+      'other',
     ]) {
       final Object? v = draft[key];
       if (v is String && v.isNotEmpty) {
@@ -227,6 +261,11 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   }
 
   Map<String, String> _initials = <String, String>{};
+
+  /// Live seed for a text field: the user's typed value always wins over the
+  /// stored initial value, so leaving the details step and coming back (or
+  /// rotating the form key) never silently reverts what was typed.
+  String _seed(String key) => _values[key] ?? _initials[key] ?? '';
 
   double get _progress {
     int done = 0;
@@ -283,8 +322,14 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   }
 
   /// Persists the unfinished form locally so students can resume later.
+  ///
+  /// `save()` is only run once the details step validates, so an incomplete
+  /// draft never writes invalid input back through the onSaved callbacks.
+  /// The live `_values` map (fed by every onChanged) still carries whatever
+  /// has been typed, so a partial draft is never lost.
   void _saveDraft() {
-    _detailsKey.currentState?.save();
+    final FormState? form = _detailsKey.currentState;
+    if (form != null && form.validate()) form.save();
     final AppState state = AppScope.of(context).state;
     state.saveServiceRequestDraft(<String, Object?>{
       ..._values,
@@ -312,10 +357,13 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 450));
     if (!mounted) return;
     final String ref = _referenceId;
+    final String routeLabel = _category == otherCategory
+        ? 'Other: ${(_values['other'] ?? '').trim()}'
+        : (_category ?? '');
     final Map<String, String> record = <String, String>{
       'ref': ref,
       'subject': (_values['subject'] ?? '').trim(),
-      'category': _category ?? '',
+      'category': routeLabel,
       'urgency': _urgency ?? '',
     };
     setState(() {
@@ -390,6 +438,10 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     final AppState state = AppScope.of(context).state;
     state.clearServiceRequestDraft();
     if (!mounted) return;
+    // Required reset behaviour: run FormState.reset() on both steps first,
+    // then rotate the keys below so every control remounts cleared.
+    _detailsKey.currentState?.reset();
+    _reviewKey.currentState?.reset();
     setState(() {
       _epoch++;
       _detailsKey = GlobalKey<FormState>();
@@ -524,7 +576,89 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   ),
           ),
           if (_recent.isNotEmpty && !_submitted) _buildRecent(text),
+          // Hidden while reviewing so the step keeps its compact scroll range.
+          if (_step == 0 || _submitted) ...<Widget>[
+            const SizedBox(height: AppSpacing.lg),
+            _buildSupportSection(text),
+          ],
           const SizedBox(height: AppSpacing.xxl),
+        ],
+      ),
+    );
+  }
+
+  /// IITU-style student support block shown above the form.
+  Widget _buildSupportSection(TextTheme text) {
+    final String status = _recent.isEmpty
+        ? 'No active request yet.'
+        : '${_recent.length} submitted this session';
+    return AVITFadeUp(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'STUDENT SUPPORT',
+            style: text.labelSmall?.copyWith(
+              color: AppColors.royalBlue,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.6,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text('Help when you need it.', style: text.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            'Find the right campus service and submit a request without '
+            'searching through departments.',
+            style: text.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(
+                  child: _SupportCard(
+                    icon: Icons.bolt_rounded,
+                    title: 'Quick Help',
+                    body: 'Find the right campus service quickly.',
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _SupportCard(
+                    icon: Icons.troubleshoot_rounded,
+                    title: 'Common Issues',
+                    body: 'Wi-Fi, ID card, dormitory, documents and more.',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(
+                  child: _SupportCard(
+                    icon: Icons.pending_actions_rounded,
+                    title: 'Request Status',
+                    body: 'Check your latest submitted request.',
+                    status: status,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _SupportCard(
+                    icon: Icons.post_add_rounded,
+                    title: 'Service Request',
+                    body: 'Submit an issue online in a few steps.',
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -561,6 +695,40 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.lightBlue,
+                  borderRadius: AppRadius.pillShape,
+                  border: Border.all(color: AppColors.primaryBlue),
+                ),
+                child: Text(
+                  'NEW REQUEST',
+                  style: text.labelSmall?.copyWith(
+                    color: AppColors.primaryBlue,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${_step + 1} / 2',
+                style: text.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -721,7 +889,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   AVITTextField(
                     label: 'Student name',
                     required: true,
-                    initialValue: _initials['name'] ?? '',
+                    initialValue: _seed('name'),
                     hint: 'Ananya Sharma',
                     textCapitalization: TextCapitalization.words,
                     validator: ServiceRequestRules.fullName,
@@ -734,7 +902,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   AVITTextField(
                     label: 'Student ID',
                     required: true,
-                    initialValue: _initials['studentId'] ?? '',
+                    initialValue: _seed('studentId'),
                     hint: 'AVIT2026CS042',
                     validator: Validators.studentId,
                     onChanged: (String? v) => setState(() {
@@ -746,7 +914,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   AVITTextField(
                     label: 'Campus email',
                     required: true,
-                    initialValue: _initials['email'] ?? '',
+                    initialValue: _seed('email'),
                     hint: 'student@avit.ac.in',
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: Icons.alternate_email_rounded,
@@ -759,11 +927,16 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   const SizedBox(height: AppSpacing.md),
                   AVITTextField(
                     label: 'Phone number',
-                    hint: 'Optional — 10-digit mobile',
-                    initialValue: _initials['phone'] ?? '',
+                    required: _contact == 'Phone call',
+                    hint: _contact == 'Phone call'
+                        ? 'Required — 10-digit mobile'
+                        : 'Optional — 10-digit mobile',
+                    initialValue: _seed('phone'),
                     keyboardType: TextInputType.phone,
                     prefixIcon: Icons.phone_rounded,
-                    validator: ServiceRequestRules.optionalPhone,
+                    validator: _contact == 'Phone call'
+                        ? ServiceRequestRules.phoneWhenContactIsCall
+                        : ServiceRequestRules.optionalPhone,
                     onChanged: (String? v) => setState(() {
                       _values['phone'] = v ?? '';
                     }),
@@ -794,11 +967,71 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                     ],
                     onChanged: (String? v) => setState(() => _category = v),
                   ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text('Popular requests', style: text.labelLarge),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
+                    children: <Widget>[
+                      for (final String c in popularCategories)
+                        ChoiceChip(
+                          label: Text(c),
+                          selected: _category == c,
+                          onSelected: (_) => setState(() => _category = c),
+                          selectedColor: AppColors.lightBlue,
+                          labelStyle: text.labelMedium?.copyWith(
+                            color: _category == c
+                                ? AppColors.primaryBlue
+                                : null,
+                            fontWeight: _category == c
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                          side: BorderSide(
+                            color: _category == c
+                                ? AppColors.primaryBlue
+                                : AppColors.border,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.pillShape,
+                          ),
+                        ),
+                    ],
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topCenter,
+                    child: _category == otherCategory
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              const SizedBox(height: AppSpacing.md),
+                              AVITTextField(
+                                label: 'Tell us what happened',
+                                required: true,
+                                initialValue: _seed('other'),
+                                hint: 'Describe the issue that is not listed above...',
+                                maxLines: 3,
+                                maxLength: 180,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                validator: ServiceRequestRules.otherDetails,
+                                onChanged: (String? v) =>
+                                    setState(() => _values['other'] = v ?? ''),
+                                onSaved: (String? v) =>
+                                    _values['other'] = v ?? '',
+                              ),
+                            ],
+                          )
+                        : const SizedBox(width: double.infinity),
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   AVITTextField(
                     label: 'Request subject',
                     required: true,
-                    initialValue: _initials['subject'] ?? '',
+                    initialValue: _seed('subject'),
                     hint: 'e.g. Projector not working in AB-204',
                     maxLength: 80,
                     validator: ServiceRequestRules.subject,
@@ -810,7 +1043,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   AVITTextField(
                     label: 'Describe your request',
                     required: true,
-                    initialValue: _initials['details'] ?? '',
+                    initialValue: _seed('details'),
                     hint:
                         'What do you need? Include block, room, timings… '
                         '(20-500 characters)',
@@ -837,7 +1070,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                               AVITTextField(
                                 label: 'Block / room number',
                                 required: true,
-                                initialValue: _initials['block'] ?? '',
+                                initialValue: _seed('block'),
                                 hint: 'e.g. AB-204, Girls Hostel C-212',
                                 validator: ServiceRequestRules.blockRoom,
                                 onChanged: (String? v) => setState(() {
@@ -932,6 +1165,36 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
               ),
             ),
           ),
+          if (_progress >= 1) ...<Widget>[
+            AVITCard(
+              color: AppColors.successSurface,
+              borderColor: AppColors.success,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                children: <Widget>[
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 18,
+                    color: AppColors.success,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'All required fields are complete',
+                      style: text.labelMedium?.copyWith(
+                        color: AppColors.successText,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: <Widget>[
@@ -1130,9 +1393,9 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 12),
                                 child: Text(
-                                  'I confirm the information above is correct '
-                                  'and agree that the campus unit may contact '
-                                  'me about this request.',
+                                  'I confirm that the information provided is '
+                                  'correct, and agree that the campus unit may '
+                                  'contact me about this request.',
                                   style: text.bodySmall,
                                 ),
                               ),
@@ -1157,37 +1420,37 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
+          AVITButton(
+            label: 'Back',
+            icon: Icons.arrow_back_rounded,
+            variant: AVITButtonVariant.secondary,
+            expand: false,
+            onPressed: () => setState(() {
+              _detailsKey = GlobalKey<FormState>();
+              _reviewKey = GlobalKey<FormState>();
+              _step = 0;
+            }),
+          ),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: <Widget>[
               Expanded(
                 child: AVITButton(
-                  label: 'Back',
-                  icon: Icons.arrow_back_rounded,
-                  variant: AVITButtonVariant.secondary,
-                  onPressed: () => setState(() {
-                    _detailsKey = GlobalKey<FormState>();
-                    _reviewKey = GlobalKey<FormState>();
-                    _step = 0;
-                  }),
+                  label: 'Submit request',
+                  icon: Icons.send_rounded,
+                  loading: _submitting,
+                  onPressed: _submitting ? null : _submit,
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: AVITButton(
-                  label: 'Reset',
-                  icon: Icons.restart_alt_rounded,
-                  variant: AVITButtonVariant.secondary,
-                  onPressed: _resetAll,
-                ),
+              AVITButton(
+                label: 'Reset',
+                icon: Icons.restart_alt_rounded,
+                variant: AVITButtonVariant.secondary,
+                expand: false,
+                onPressed: _resetAll,
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AVITButton(
-            label: 'Submit request',
-            icon: Icons.send_rounded,
-            loading: _submitting,
-            onPressed: _submitting ? null : _submit,
           ),
         ],
       ),
@@ -1209,6 +1472,12 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
         MapEntry<String, String>(
           'Block / room',
           (_values['block'] ?? '').trim(),
+        ),
+      if (_category == otherCategory &&
+          (_values['other'] ?? '').trim().isNotEmpty)
+        MapEntry<String, String>(
+          'Other details',
+          (_values['other'] ?? '').trim(),
         ),
       MapEntry<String, String>('Subject', (_values['subject'] ?? '').trim()),
       MapEntry<String, String>('Details', (_values['details'] ?? '').trim()),
@@ -1250,8 +1519,9 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     title: 'Request $_reference sent',
     message: _category == null
         ? 'The campus team will get back to you within one working day.'
-        : 'The $_category team will reach you via '
-              '${_contact ?? 'email'} within one working day.',
+        : 'The ${_category == otherCategory ? 'campus' : _category} team '
+              'will reach you via ${_contact ?? 'email'} within one working '
+              'day.',
     doneLabel: 'Start a new request',
     onDone: _resetAll,
   );
@@ -1300,6 +1570,52 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One tile of the student support section (IITU layout).
+class _SupportCard extends StatelessWidget {
+  const _SupportCard({
+    required this.icon,
+    required this.title,
+    required this.body,
+    this.status,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final String? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    return AVITCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(icon, size: 22, color: AppColors.royalBlue),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            title,
+            style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 2),
+          Text(body, style: text.labelSmall, maxLines: 2),
+          if (status != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              status!,
+              style: text.labelSmall?.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
     );

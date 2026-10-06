@@ -16,8 +16,10 @@ import '../../widgets/avit_inputs.dart';
 
 /// Edit the fields a student is allowed to change about themselves.
 ///
-/// Identity is deliberately out of bounds: email, student ID, role, semester
-/// and verification state come from the institution and are shown read-only.
+/// The campus inbox is editable here so a student can correct or attach their
+/// student email, but it must stay an institutional address. Student ID,
+/// role, semester and verification state still come from the institution and
+/// are shown read-only.
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -41,6 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _name = TextEditingController();
+  final TextEditingController _email = TextEditingController();
   final TextEditingController _phone = TextEditingController();
   final TextEditingController _programme = TextEditingController();
   final TextEditingController _department = TextEditingController();
@@ -62,6 +65,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (user == null) return;
     _ready = true;
     _name.text = user.fullName;
+    _email.text = user.email;
     _phone.text = user.phone;
     _programme.text = user.programme;
     _department.text = user.department;
@@ -73,6 +77,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _name.dispose();
+    _email.dispose();
     _phone.dispose();
     _programme.dispose();
     _department.dispose();
@@ -103,6 +108,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final AppUser updated = user.copyWith(
       fullName: _name.text.trim(),
+      email: _email.text.trim().toLowerCase(),
       phone: _digits(_phone.text),
       programme: _programme.text.trim(),
       department: _department.text.trim(),
@@ -256,6 +262,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AVITTextField(
+                      label: 'Student email',
+                      required: true,
+                      controller: _email,
+                      maxLength: 120,
+                      keyboardType: TextInputType.emailAddress,
+                      prefixIcon: Icons.mail_outline_rounded,
+                      hint: 'Your campus inbox, e.g. student@avit.ac.in',
+                      validator: Validators.institutionalEmail,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AVITTextField(
                       label: 'Mobile number',
                       controller: _phone,
                       keyboardType: TextInputType.phone,
@@ -333,12 +350,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 borderColor: Colors.transparent,
                 child: Column(
                   children: <Widget>[
-                    _LockedRow(
-                      icon: Icons.mail_outline_rounded,
-                      label: 'Email',
-                      value: user.email,
-                    ),
-                    const Divider(height: 1),
                     _LockedRow(
                       icon: Icons.badge_outlined,
                       label: user.isStudent ? 'Student ID' : 'Staff ID',

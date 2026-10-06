@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_spacing.dart';
 
 /// Circular progress ring used for attendance and queue progress.
 class ProgressRing extends StatelessWidget {
@@ -270,7 +271,7 @@ class BarRow extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
             child: TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0, end: value.clamp(0, 1)),
               duration: const Duration(milliseconds: 800),

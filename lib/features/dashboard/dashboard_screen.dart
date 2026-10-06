@@ -118,7 +118,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         padding: AppSpacing.screenPadding,
         children: <Widget>[
           _GreetingHeader(user: user),
-          const SizedBox(height: AppSpacing.md),
           _AcademicSnapshot(
             semester: user?.semester,
             attendance: _attendance,
@@ -140,7 +139,11 @@ class _DashboardScreenState extends State<DashboardScreen>
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.lg),
+          // The reminder sits above the fold but below the schedule, so the
+          // "Classes today" summary is never pushed out of the first screen.
+          const _ReminderStrip(),
+          // The schedule and attendance cards carry their own bottom margin
+          // (AppSpacing.lg), so no extra spacer is needed before this header.
           AVITSectionHeader(
             title: 'Quick Services',
             subtitle: 'Everything you use on campus',
@@ -327,6 +330,7 @@ class _GreetingHeader extends StatelessWidget {
     final TextTheme text = Theme.of(context).textTheme;
     final DateTime now = DateTime.now();
     final String programme = user?.programme ?? '';
+    final String email = user?.email ?? '';
     final int? picture = user == null
         ? null
         : avatarPresetIndex(user!.avatarUrl);
@@ -341,6 +345,9 @@ class _GreetingHeader extends StatelessWidget {
     return AVITFadeUp(
       child: AVITCard(
         padding: EdgeInsets.zero,
+        // Margin (not padding) separates this header from the snapshot below
+        // so every major dashboard section is spaced by its own Container.
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
         borderColor: Colors.transparent,
         child: ClipRRect(
           borderRadius: AppRadius.card,
@@ -359,8 +366,8 @@ class _GreetingHeader extends StatelessWidget {
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                         colors: <Color>[
-                          AppColors.navy.withValues(alpha: 0.85),
-                          AppColors.navy.withValues(alpha: 0.45),
+                          AppColors.navy.withValues(alpha: 0.88),
+                          AppColors.navy.withValues(alpha: 0.75),
                         ],
                       ),
                     ),
@@ -418,6 +425,33 @@ class _GreetingHeader extends StatelessWidget {
                                 color: AppColors.white.withValues(alpha: 0.8),
                               ),
                             ),
+                            if (email.isNotEmpty) ...<Widget>[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.mail_rounded,
+                                    size: 13,
+                                    color: AppColors.white.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: Text(
+                                      email,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: text.labelMedium?.copyWith(
+                                        color: AppColors.white.withValues(
+                                          alpha: 0.92,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 10),
                             Wrap(
                               spacing: 6,
@@ -481,7 +515,8 @@ class _GreetingHeader extends StatelessWidget {
                             Text(
                               'Campus online',
                               style: text.labelSmall?.copyWith(
-                                color: AppColors.white.withValues(alpha: 0.85),
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -739,10 +774,7 @@ class _StatTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: text.titleLarge?.copyWith(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: text.headlineMedium?.copyWith(color: AppColors.navy),
                 ),
                 Text(
                   caption,
@@ -775,6 +807,7 @@ class _TodaySchedule extends StatelessWidget {
         .firstWhere((TimetableEntry? e) => e != null, orElse: () => null);
 
     return AVITCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -795,7 +828,7 @@ class _TodaySchedule extends StatelessWidget {
                         color: e == current
                             ? AppColors.success
                             : AppColors.lightBlue,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -845,6 +878,7 @@ class _AttendanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     return AVITCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         children: <Widget>[
           Text('Attendance', style: text.titleSmall),
@@ -859,7 +893,9 @@ class _AttendanceCard extends StatelessWidget {
           Text(
             percentage >= 75 ? 'On track' : 'Needs attention',
             style: text.labelSmall?.copyWith(
-              color: percentage >= 75 ? AppColors.success : AppColors.warning,
+              color: percentage >= 75
+                  ? AppColors.successText
+                  : AppColors.warningText,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -869,6 +905,90 @@ class _AttendanceCard extends StatelessWidget {
             style: text.labelSmall?.copyWith(color: AppColors.textTertiary),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One explicit, actionable reminder on the home dashboard.
+class _ReminderStrip extends StatelessWidget {
+  const _ReminderStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    final AppState state = AppScope.of(context).state;
+    return AVITFadeUp(
+      delay: const Duration(milliseconds: 120),
+      child: AVITCard(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.tangerine.withValues(alpha: 0.16),
+                borderRadius: AppRadius.small,
+              ),
+              child: const Icon(
+                Icons.notifications_active_rounded,
+                color: AppColors.tangerineDeep,
+                size: 21,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'REMINDER',
+                    style: text.labelSmall?.copyWith(
+                      color: AppColors.textTertiary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Submit the Cyber Security lab record',
+                    style: text.titleSmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Due Friday, 10 October • 5:00 PM • Lab AB-204',
+                    style: text.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            AVITButton(
+              label: 'Remind me',
+              icon: Icons.add_alert_rounded,
+              variant: AVITButtonVariant.ghost,
+              // Row gives non-flexible children unbounded width, so this
+              // button must not expand to infinity.
+              expand: false,
+              onPressed: () {
+                state.addReminder();
+                showAVITSnackBar(
+                  context,
+                  message: 'Reminder set — ${state.reminderCount} active',
+                  tone: AVITSnackTone.success,
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -968,6 +1088,8 @@ class _QuickServices extends StatelessWidget {
               tone: tone,
               imageAsset: image,
               metallic: true,
+              ringSweep: true,
+              ringDelay: Duration(milliseconds: 70 * i + 240),
               onTap: () => Navigator.pushNamed(context, route),
             ),
           ),

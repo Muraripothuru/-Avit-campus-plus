@@ -29,6 +29,11 @@ abstract final class Routes {
   // Campus services
   static const String gatePass = '/gate-pass';
   static const String serviceRequest = '/service-request';
+
+  /// Service details is pushed directly (it needs the selected
+  /// `ServiceEntry`), so it is never resolved from a name — but it stays in
+  /// [protected] so an accidental deep link can never expose it unsigned.
+  static const String serviceDetail = '/service-detail';
   static const String transport = '/transport';
   static const String visitorPass = '/visitor-pass';
   static const String smartQueue = '/smart-queue';
@@ -78,6 +83,7 @@ abstract final class Routes {
     academicCalendar,
     gatePass,
     serviceRequest,
+    serviceDetail,
     transport,
     visitorPass,
     smartQueue,

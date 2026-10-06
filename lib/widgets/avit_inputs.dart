@@ -89,7 +89,7 @@ class _AVITTextFieldState extends State<AVITTextField> {
               ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         TextFormField(
           controller: widget.controller,
           initialValue: widget.initialValue,
@@ -178,7 +178,12 @@ class _AVITButtonState extends State<AVITButton> {
       AVITButtonVariant.secondary => OutlinedButton.styleFrom(),
       AVITButtonVariant.ghost => TextButton.styleFrom(
         foregroundColor: AppColors.primaryBlue,
-        minimumSize: const Size(0, 44),
+        minimumSize: const Size(64, 52),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       ),
       AVITButtonVariant.danger => ElevatedButton.styleFrom(
         backgroundColor: AppColors.danger,
@@ -229,14 +234,24 @@ class _AVITButtonState extends State<AVITButton> {
 
   Widget _child(BuildContext context) {
     if (widget.loading) {
-      return const SizedBox(
+      final bool onFill = switch (widget.variant) {
+        AVITButtonVariant.primary ||
+        AVITButtonVariant.danger ||
+        AVITButtonVariant.success => true,
+        AVITButtonVariant.secondary || AVITButtonVariant.ghost => false,
+      };
+      return SizedBox(
         width: 20,
         height: 20,
-        child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
+        child: CircularProgressIndicator(
+          strokeWidth: 2.4,
+          color: onFill ? AppColors.white : AppColors.primaryBlue,
+        ),
       );
     }
     final List<Widget> children = <Widget>[
-      if (widget.icon != null) Icon(widget.icon, size: widget.compact ? 16 : 18),
+      if (widget.icon != null)
+        Icon(widget.icon, size: widget.compact ? 16 : 18),
       Text(widget.label, textAlign: TextAlign.center),
     ];
     return Wrap(
@@ -295,7 +310,7 @@ class AVITDropdown<T> extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         DropdownButtonFormField<T>(
           initialValue: value,
           items: items,

@@ -297,7 +297,7 @@ void main() {
 
     final Finder fields = find.byType(TextFormField, skipOffstage: false);
     final String before = state.user!.phone;
-    await tester.enterText(fields.at(1), '12345');
+    await tester.enterText(fields.at(2), '12345');
     await tester.pump(const Duration(milliseconds: 300));
 
     final Finder save = find.text('Save changes');

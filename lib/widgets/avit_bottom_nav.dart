@@ -179,8 +179,7 @@ class _NavTabState extends State<_NavTab> with SingleTickerProviderStateMixin {
                   const SizedBox(height: 3),
                   Text(
                     widget.tab.label,
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontWeight: widget.selected
                           ? FontWeight.w700
                           : FontWeight.w500,

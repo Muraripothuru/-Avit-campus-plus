@@ -7,6 +7,7 @@ import '../core/utils/formatters.dart';
 import '../models/announcement.dart';
 import '../models/campus_event.dart';
 import 'avit_cards.dart';
+import 'avit_motion.dart';
 
 /// Interactive service tile used on the dashboard and Campus tab.
 class AVITServiceCard extends StatelessWidget {
@@ -20,6 +21,9 @@ class AVITServiceCard extends StatelessWidget {
     this.badge,
     this.imageAsset,
     this.metallic = false,
+    this.heroTag,
+    this.ringSweep = false,
+    this.ringDelay = Duration.zero,
   });
 
   final String title;
@@ -29,11 +33,37 @@ class AVITServiceCard extends StatelessWidget {
   final VoidCallback onTap;
   final int? badge;
 
+  /// When set, the icon tile flies to the matching Hero on the Service
+  /// Details route (shared-element transition for list → detail).
+  final String? heroTag;
+
   /// Example image that fills the entire tile; falls back to [icon].
   final String? imageAsset;
 
   /// Wraps the tile in the metallic silver border treatment.
   final bool metallic;
+
+  /// Runs [AVITRingSweep] once around the tile border on first build.
+  final bool ringSweep;
+
+  /// Start offset for [ringSweep] (stack tiles stagger through this).
+  final Duration ringDelay;
+
+  /// The 40×40 accent tile that hosts the service icon.
+  Widget _iconTile(Color accent) => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: accent.withValues(alpha: 0.12),
+      borderRadius: AppRadius.small,
+    ),
+    child: Icon(icon, color: accent, size: 21),
+  );
+
+  /// Wraps [tile] in the cover-ring sweep when [ringSweep] is on.
+  Widget _ringed(Color accent, Widget tile) => ringSweep
+      ? AVITRingSweep(accent: accent, delay: ringDelay, child: tile)
+      : tile;
 
   @override
   Widget build(BuildContext context) {
@@ -46,125 +76,125 @@ class AVITServiceCard extends StatelessWidget {
       AVITStatusTone.brand => AppColors.royalBlue,
     };
     final TextTheme text = Theme.of(context).textTheme;
-
     if (imageAsset != null) {
-      return AVITAnimatedCard(
-        onTap: onTap,
-        metallic: metallic,
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final double imageHeight = ((constraints.maxHeight - 36) * 0.72)
-                .clamp(40.0, 88.0);
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Expanded(
-                  child: Center(
-                    child: SizedBox(
-                      height: imageHeight,
-                      width: double.infinity,
-                      child: Image.asset(
-                        imageAsset!,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) =>
-                            Icon(icon, color: accent, size: 30),
+      return _ringed(
+        accent,
+        AVITAnimatedCard(
+          onTap: onTap,
+          metallic: metallic,
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final double imageHeight = ((constraints.maxHeight - 36) * 0.72)
+                  .clamp(40.0, 88.0);
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Expanded(
+                    child: Center(
+                      child: SizedBox(
+                        height: imageHeight,
+                        width: double.infinity,
+                        child: Image.asset(
+                          imageAsset!,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) =>
+                              Icon(icon, color: accent, size: 30),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: text.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: text.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       );
     }
 
-    return AVITAnimatedCard(
-      onTap: onTap,
-      metallic: metallic,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) =>
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.topLeft,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: accent.withValues(alpha: 0.12),
-                            borderRadius: AppRadius.small,
-                          ),
-                          child: Icon(icon, color: accent, size: 21),
-                        ),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: badge != null && badge! > 0
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 7,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryBlue,
-                                      borderRadius: AppRadius.pillShape,
-                                    ),
-                                    child: Text(
-                                      '$badge',
-                                      style: text.labelSmall?.copyWith(
-                                        color: AppColors.white,
-                                        fontWeight: FontWeight.w700,
+    return _ringed(
+      accent,
+      AVITAnimatedCard(
+        onTap: onTap,
+        metallic: metallic,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) =>
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.topLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          if (heroTag != null)
+                            Hero(tag: heroTag!, child: _iconTile(accent))
+                          else
+                            _iconTile(accent),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: badge != null && badge! > 0
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 2,
                                       ),
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryBlue,
+                                        borderRadius: AppRadius.pillShape,
+                                      ),
+                                      child: Text(
+                                        '$badge',
+                                        style: text.labelSmall?.copyWith(
+                                          color: AppColors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      title,
-                      style: text.titleSmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (subtitle != null) ...<Widget>[
-                      const SizedBox(height: 2),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
                       Text(
-                        subtitle!,
-                        style: text.bodySmall,
-                        maxLines: 2,
+                        title,
+                        style: text.titleSmall,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (subtitle != null) ...<Widget>[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: text.bodySmall,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
+        ),
       ),
     );
   }
@@ -189,11 +219,11 @@ class AVITEventCard extends StatelessWidget {
 
   static const List<(IconData, Color)> _covers = <(IconData, Color)>[
     (Icons.security_rounded, Color(0xFF0E2F73)),
-    (Icons.cloud_rounded, Color(0xFF185ADB)),
-    (Icons.sports_soccer_rounded, Color(0xFF12924F)),
-    (Icons.music_note_rounded, Color(0xFF7C3AED)),
-    (Icons.work_rounded, Color(0xFFFF8A3D)),
-    (Icons.smart_toy_rounded, Color(0xFF0F766E)),
+    (Icons.cloud_rounded, Color(0xFF5E8CF2)),
+    (Icons.sports_soccer_rounded, Color(0xFF185ADB)),
+    (Icons.music_note_rounded, Color(0xFFFF8A3D)),
+    (Icons.work_rounded, Color(0xFF0E2F73)),
+    (Icons.smart_toy_rounded, Color(0xFF185ADB)),
   ];
 
   (IconData, Color) get _cover {
@@ -242,6 +272,30 @@ class AVITEventCard extends StatelessWidget {
             ),
             child: Stack(
               children: <Widget>[
+                // Legibility scrim: the white title and favourite icon sit on
+                // top of light covers (orange ~2.3:1), so darken the lower
+                // half until the text clears 4.5:1.
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(AppRadius.md),
+                    ),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: <Color>[
+                            AppColors.navy.withValues(alpha: 0),
+                            AppColors.navy.withValues(alpha: 0.55),
+                            AppColors.navy.withValues(alpha: 0.85),
+                          ],
+                          stops: const <double>[0.4, 0.72, 1],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 Positioned(
                   right: 12,
                   bottom: -14,
@@ -256,7 +310,7 @@ class AVITEventCard extends StatelessWidget {
                   top: AppSpacing.sm,
                   child: AVITStatusChip(
                     label: event.category,
-                    tone: AVITStatusTone.neutral,
+                    tone: AVITStatusTone.brand,
                     compact: true,
                   ),
                 ),
@@ -455,7 +509,7 @@ class AVITAnnouncementCard extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               color: _accent,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
           const SizedBox(width: AppSpacing.md),

@@ -82,8 +82,10 @@ class _AppShellState extends State<AppShell> {
         );
       case AppTab.alerts:
         ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All notifications marked as read')),
+        showAVITSnackBar(
+          context,
+          message: 'All notifications marked as read',
+          tone: AVITSnackTone.success,
         );
       case AppTab.campus:
         Navigator.of(context).pushNamed(Routes.emergency);

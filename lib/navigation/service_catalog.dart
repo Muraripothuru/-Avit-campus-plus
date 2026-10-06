@@ -8,6 +8,10 @@ import '../widgets/avit_cards.dart';
 /// Shared by the Campus tab grid and the global search so the two can never
 /// drift apart: a service the student can see on the Campus tab is always
 /// findable by name from the search screen, and vice versa.
+///
+/// The `description`, `location`, `hours` and `contact` fields are the
+/// CampusService detail data shown on the Service Details route — every
+/// entry carries its own values so no two detail pages are identical.
 class ServiceEntry {
   const ServiceEntry(
     this.title,
@@ -15,6 +19,11 @@ class ServiceEntry {
     this.route,
     this.subtitle,
     this.tone, {
+    required this.description,
+    required this.location,
+    required this.hours,
+    required this.contact,
+    this.status = 'Available',
     this.badgeKey,
   });
 
@@ -23,6 +32,21 @@ class ServiceEntry {
   final String route;
   final String subtitle;
   final AVITStatusTone tone;
+
+  /// Long-form copy shown on the Service Details route.
+  final String description;
+
+  /// Where the service is delivered.
+  final String location;
+
+  /// Opening hours shown on the detail route.
+  final String hours;
+
+  /// Enquiry contact shown on the detail route.
+  final String contact;
+
+  /// Live-looking service status shown as the chip on the detail route.
+  final String status;
 
   /// LocalStore counter surfaced as a badge: `gate`, `visitor` or null.
   final String? badgeKey;
@@ -47,6 +71,12 @@ abstract final class ServiceCatalog {
             Routes.timetable,
             'Week at a glance',
             AVITStatusTone.brand,
+            description:
+                'Your weekly class timetable with rooms, faculty and the '
+                'highlighted next class.',
+            location: 'Academic Block A • published by the Registrar',
+            hours: 'Updated every semester',
+            contact: 'registrar@avit.ac.in',
           ),
           ServiceEntry(
             'Attendance',
@@ -54,6 +84,12 @@ abstract final class ServiceCatalog {
             Routes.attendance,
             'Subject-wise tracking',
             AVITStatusTone.brand,
+            description:
+                'Subject-wise attendance with shortage alerts and the '
+                'required 75% marker.',
+            location: 'Academic Block A, Room 12',
+            hours: 'Mon–Sat 9:00 AM–4:00 PM',
+            contact: 'attendance@avit.ac.in',
           ),
           ServiceEntry(
             'Courses',
@@ -61,6 +97,11 @@ abstract final class ServiceCatalog {
             Routes.courses,
             'Syllabus & credits',
             AVITStatusTone.brand,
+            description:
+                'Syllabus, credit load and course outcomes for your programme.',
+            location: 'Academic Block A, Room 10',
+            hours: 'Mon–Fri 9:30 AM–4:30 PM',
+            contact: 'academics@avit.ac.in',
           ),
           ServiceEntry(
             'Examinations',
@@ -68,6 +109,13 @@ abstract final class ServiceCatalog {
             Routes.examinations,
             'Hall tickets & dates',
             AVITStatusTone.warning,
+            description:
+                'Hall tickets, exam timetable, results and re-evaluation '
+                'requests.',
+            location: 'Examination Cell, Admin Building',
+            hours: 'Mon–Fri 10:00 AM–3:00 PM',
+            contact: 'exams@avit.ac.in',
+            status: 'Exam season',
           ),
           ServiceEntry(
             'Academic Calendar',
@@ -75,6 +123,12 @@ abstract final class ServiceCatalog {
             Routes.academicCalendar,
             'Important dates',
             AVITStatusTone.info,
+            description:
+                'Semester start dates, holidays, internal exams and '
+                'placement windows at a glance.',
+            location: 'Registrar Office, Admin Building',
+            hours: 'Mon–Fri 9:00 AM–5:00 PM',
+            contact: 'registrar@avit.ac.in',
           ),
         ],
         'Passes & Movement': <ServiceEntry>[
@@ -85,6 +139,12 @@ abstract final class ServiceCatalog {
             'Exit approval + QR',
             AVITStatusTone.brand,
             badgeKey: 'gate',
+            description:
+                'Request exit approval from the warden and carry a scannable '
+                'QR pass at the gate.',
+            location: 'Security Cabin, Main Gate',
+            hours: 'Open 24×7',
+            contact: 'security@avit.ac.in',
           ),
           ServiceEntry(
             'Visitor Pass',
@@ -93,6 +153,12 @@ abstract final class ServiceCatalog {
             'Invite someone on campus',
             AVITStatusTone.brand,
             badgeKey: 'visitor',
+            description:
+                'Invite guests on campus in advance with a time-bound visitor '
+                'pass.',
+            location: 'Security Cabin, Main Gate',
+            hours: 'Open 24×7',
+            contact: 'visitors@avit.ac.in',
           ),
           ServiceEntry(
             'Transport',
@@ -100,6 +166,13 @@ abstract final class ServiceCatalog {
             Routes.transport,
             'Bus routes & seats',
             AVITStatusTone.info,
+            description:
+                'Bus routes, stop timings, live seat counts and route '
+                'changes.',
+            location: 'Transport Office, Main Gate',
+            hours: 'Mon–Sat 7:00 AM–7:00 PM',
+            contact: 'transport@avit.ac.in',
+            status: 'Limited seats',
           ),
           ServiceEntry(
             'Scanner',
@@ -107,6 +180,12 @@ abstract final class ServiceCatalog {
             Routes.scanner,
             'Scan any AVIT pass',
             AVITStatusTone.info,
+            description:
+                'Verify any gate or visitor pass QR at the counter in one '
+                'scan.',
+            location: 'Main Gate counter',
+            hours: 'Open 24×7',
+            contact: 'security@avit.ac.in',
           ),
         ],
         'On Campus': <ServiceEntry>[
@@ -116,6 +195,12 @@ abstract final class ServiceCatalog {
             Routes.serviceRequest,
             'Ask any campus unit',
             AVITStatusTone.brand,
+            description:
+                'Raise a validated request with any campus unit — helpdesk, '
+                'facilities, accounts and more.',
+            location: 'Student Centre, Level 1',
+            hours: 'Mon–Fri 9:00 AM–5:00 PM',
+            contact: 'helpdesk@avit.ac.in',
           ),
           ServiceEntry(
             'Smart Queue',
@@ -123,6 +208,12 @@ abstract final class ServiceCatalog {
             Routes.smartQueue,
             'Skip the waiting line',
             AVITStatusTone.info,
+            description:
+                'Book a slot before you walk over and watch the live queue '
+                'from your phone.',
+            location: 'Student Centre, Level 1',
+            hours: 'Mon–Sat 8:30 AM–4:30 PM',
+            contact: 'queues@avit.ac.in',
           ),
           ServiceEntry(
             'Campus Map',
@@ -130,6 +221,12 @@ abstract final class ServiceCatalog {
             Routes.campusMap,
             'Find any building',
             AVITStatusTone.info,
+            description:
+                'Locate buildings, labs, blocks and landmarks with opening '
+                'hours for each place.',
+            location: 'Campus-wide wayfinding',
+            hours: 'Available 24/7',
+            contact: 'maps@avit.ac.in',
           ),
           ServiceEntry(
             'Library',
@@ -137,6 +234,13 @@ abstract final class ServiceCatalog {
             Routes.library,
             'Hours, books, dues',
             AVITStatusTone.brand,
+            description:
+                'Search the catalogue, renew issues and clear dues before '
+                'they pile up.',
+            location: 'Library Block, Level 2',
+            hours: 'Mon–Sat 8:30 AM–6:00 PM',
+            contact: 'library@avit.ac.in',
+            status: 'Open until 6 PM',
           ),
           ServiceEntry(
             'Cafeteria',
@@ -144,6 +248,12 @@ abstract final class ServiceCatalog {
             Routes.cafeteria,
             'Menu & timings',
             AVITStatusTone.success,
+            description:
+                'Today\'s menu, meal timings and prepaid balance top-ups.',
+            location: 'Food Court, Student Centre',
+            hours: 'Mon–Sat 7:30 AM–8:00 PM',
+            contact: 'cafeteria@avit.ac.in',
+            status: 'Lunch rush',
           ),
           ServiceEntry(
             'Hostel',
@@ -151,6 +261,12 @@ abstract final class ServiceCatalog {
             Routes.hostel,
             'Rooms, mess, requests',
             AVITStatusTone.info,
+            description:
+                'Room allotment, mess menu, maintenance requests and warden '
+                'contacts.',
+            location: 'Hostel Block, East Campus',
+            hours: 'Warden desk 8:00 AM–9:00 PM',
+            contact: 'hostel@avit.ac.in',
           ),
           ServiceEntry(
             'Lost & Found',
@@ -158,6 +274,12 @@ abstract final class ServiceCatalog {
             Routes.lostFound,
             'Report or claim an item',
             AVITStatusTone.warning,
+            description:
+                'Report something you lost or claim an item somebody else '
+                'found on campus.',
+            location: 'Student Centre, Level 1',
+            hours: 'Mon–Fri 10:00 AM–4:00 PM',
+            contact: 'lostfound@avit.ac.in',
           ),
           ServiceEntry(
             'Health Centre',
@@ -165,6 +287,13 @@ abstract final class ServiceCatalog {
             Routes.healthCentre,
             'Appointments & first aid',
             AVITStatusTone.danger,
+            description:
+                'Book a consultation, walk in for first aid and keep your '
+                'check-up history.',
+            location: 'Health Centre, near Sports Ground',
+            hours: 'Mon–Sat 8:00 AM–6:00 PM',
+            contact: 'health@avit.ac.in',
+            status: 'Walk-ins welcome',
           ),
         ],
         'Safety': <ServiceEntry>[
@@ -174,6 +303,12 @@ abstract final class ServiceCatalog {
             Routes.emergency,
             'One tap to alert security',
             AVITStatusTone.danger,
+            description:
+                'One tap alerts the security control room with your live '
+                'campus location.',
+            location: 'Security Control Room, Main Gate',
+            hours: 'Open 24×7',
+            contact: 'emergency@avit.ac.in',
           ),
           ServiceEntry(
             'Report Incident',
@@ -181,6 +316,12 @@ abstract final class ServiceCatalog {
             Routes.reportIncident,
             'Confidential report',
             AVITStatusTone.danger,
+            description:
+                'File a confidential incident report that only authorised '
+                'staff can read.',
+            location: 'Security Control Room, Main Gate',
+            hours: 'Open 24×7',
+            contact: 'incident@avit.ac.in',
           ),
           ServiceEntry(
             'Complaints',
@@ -188,6 +329,12 @@ abstract final class ServiceCatalog {
             Routes.complaints,
             'Track your requests',
             AVITStatusTone.warning,
+            description:
+                'Log service complaints and follow their status until they '
+                'are resolved.',
+            location: 'Grievance Cell, Admin Building',
+            hours: 'Mon–Fri 10:00 AM–4:00 PM',
+            contact: 'grievance@avit.ac.in',
           ),
         ],
       };

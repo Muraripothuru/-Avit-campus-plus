@@ -48,10 +48,11 @@ void main() {
     return state;
   }
 
-  Finder dashboardDescendants(WidgetTester tester, Finder match) => find.descendant(
-    of: find.byType(DashboardScreen, skipOffstage: false),
-    matching: match,
-  );
+  Finder dashboardDescendants(WidgetTester tester, Finder match) =>
+      find.descendant(
+        of: find.byType(DashboardScreen, skipOffstage: false),
+        matching: match,
+      );
 
   testWidgets('dashboard meets the Scaffold/Container checklist', (
     WidgetTester tester,
@@ -93,7 +94,9 @@ void main() {
     int radius = 0;
     int shadow = 0;
     for (final Container c in containers) {
-      if (c.margin != null) margin++;
+      // Count only real (non-zero) margins — EdgeInsets.zero on a card is
+      // spacing evidence for nothing.
+      if (c.margin != null && c.margin != EdgeInsets.zero) margin++;
       if (c.padding != null) padding++;
       if (c.alignment != null) alignment++;
       if (c.constraints != null) constraints++;
@@ -109,23 +112,21 @@ void main() {
     // screen (96px tall tile, 56x56 avatar).
     final Size statTile = tester.getSize(
       find
-          .ancestor(
-            of: find.text('Credits'),
-            matching: find.byType(Container),
-          )
+          .ancestor(of: find.text('Credits'), matching: find.byType(Container))
           .first,
     );
     expect(statTile.height, greaterThanOrEqualTo(90), reason: 'height');
     final Size avatar = tester.getSize(
       find
-          .ancestor(
-            of: find.text('AK'),
-            matching: find.byType(Container),
-          )
+          .ancestor(of: find.text('AK'), matching: find.byType(Container))
           .first,
     );
     expect(avatar.width, greaterThanOrEqualTo(50), reason: 'width');
-    expect(margin, greaterThanOrEqualTo(1), reason: 'margin');
+    expect(
+      margin,
+      greaterThanOrEqualTo(3),
+      reason: 'margin separates the major dashboard sections',
+    );
     expect(padding, greaterThanOrEqualTo(4), reason: 'padding');
     expect(alignment, greaterThanOrEqualTo(1), reason: 'alignment');
     expect(constraints, greaterThanOrEqualTo(1), reason: 'constraints');
@@ -173,9 +174,7 @@ void main() {
     );
 
     // 8-9. Interaction: tapping a Container produces visible feedback
-    await tester.tap(
-      dashboardDescendants(tester, find.text('Credits')).first,
-    );
+    await tester.tap(dashboardDescendants(tester, find.text('Credits')).first);
     await pumpFrames(tester, count: 4);
     expect(
       find.textContaining('credits'),
@@ -197,9 +196,27 @@ void main() {
     await pumpFrames(tester, count: 3);
     expect(find.text('Quick Services'), findsOneWidget, reason: 'quick access');
     expect(
-      dashboardDescendants(tester, find.byType(AVITServiceCard)).evaluate().length,
+      dashboardDescendants(
+        tester,
+        find.byType(AVITServiceCard),
+      ).evaluate().length,
       greaterThanOrEqualTo(4),
       reason: 'at least four distinct campus services',
+    );
+
+    // Accessibility: quick-access tiles keep ~48 logical-pixel touch targets.
+    final Size serviceTile = tester.getSize(
+      dashboardDescendants(tester, find.byType(AVITServiceCard)).first,
+    );
+    expect(
+      serviceTile.width,
+      greaterThanOrEqualTo(48),
+      reason: 'quick-access touch target width',
+    );
+    expect(
+      serviceTile.height,
+      greaterThanOrEqualTo(48),
+      reason: 'quick-access touch target height',
     );
 
     await tester.scrollUntilVisible(

@@ -1,3 +1,4 @@
+import '../../core/routes/app_routes.dart';
 import '../../models/academics.dart';
 import '../../models/announcement.dart';
 import '../../models/app_notification.dart';
@@ -837,7 +838,7 @@ abstract final class DemoCatalog {
           'Show the QR at the main gate.',
       category: NotificationCategory.security,
       receivedAt: DateTime.now().subtract(const Duration(hours: 4)),
-      actionRoute: '/gate-pass',
+      actionRoute: Routes.gatePass,
     ),
     AppNotification(
       id: 'nt_2',
@@ -845,7 +846,7 @@ abstract final class DemoCatalog {
       body: 'Semester 5 End Semester examination time table is now live.',
       category: NotificationCategory.academic,
       receivedAt: DateTime.now().subtract(const Duration(hours: 7)),
-      actionRoute: '/examinations',
+      actionRoute: Routes.examinations,
     ),
     AppNotification(
       id: 'nt_3',
@@ -853,7 +854,7 @@ abstract final class DemoCatalog {
       body: 'Only 24 seats left for the AVIT Cybersecurity Hackathon.',
       category: NotificationCategory.events,
       receivedAt: DateTime.now().subtract(const Duration(days: 1)),
-      actionRoute: '/activities',
+      actionRoute: Routes.activities,
     ),
     AppNotification(
       id: 'nt_4',
@@ -861,7 +862,7 @@ abstract final class DemoCatalog {
       body: 'Route 7 will operate via Rajiv Gandhi Salai until further notice.',
       category: NotificationCategory.transport,
       receivedAt: DateTime.now().subtract(const Duration(days: 2)),
-      actionRoute: '/transport',
+      actionRoute: Routes.transport,
     ),
     AppNotification(
       id: 'nt_5',
@@ -877,7 +878,7 @@ abstract final class DemoCatalog {
           'contact the IT helpdesk immediately.',
       category: NotificationCategory.system,
       receivedAt: DateTime.now().subtract(const Duration(days: 3)),
-      actionRoute: '/settings',
+      actionRoute: Routes.settings,
     ),
   ];
 

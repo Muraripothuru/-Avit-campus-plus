@@ -176,7 +176,7 @@ class _TimetableTile extends StatelessWidget {
                   : entry.lab
                       ? AppColors.info
                       : AppColors.royalBlue,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
           const SizedBox(width: AppSpacing.md),

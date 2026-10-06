@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -5,7 +6,7 @@ import 'app_spacing.dart';
 
 /// AVIT Cobalt typography: deep-cobalt headings over warm body copy.
 abstract final class AppTypography {
-  static const String? fontFamily = null; // platform default (Roboto / SF)
+  static const String fontFamily = 'Inter'; // bundled modern UI typeface
 
   static const TextTheme lightTextTheme = TextTheme(
     displayLarge: TextStyle(
@@ -14,6 +15,7 @@ abstract final class AppTypography {
       fontWeight: FontWeight.w700,
       letterSpacing: -0.8,
       color: AppColors.navy,
+      fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
     ),
     displayMedium: TextStyle(
       fontSize: 32,
@@ -21,6 +23,7 @@ abstract final class AppTypography {
       fontWeight: FontWeight.w700,
       letterSpacing: -0.5,
       color: AppColors.navy,
+      fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
     ),
     headlineLarge: TextStyle(
       fontSize: 28,
@@ -28,6 +31,7 @@ abstract final class AppTypography {
       fontWeight: FontWeight.w700,
       letterSpacing: -0.4,
       color: AppColors.navy,
+      fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
     ),
     headlineMedium: TextStyle(
       fontSize: 24,
@@ -35,6 +39,7 @@ abstract final class AppTypography {
       fontWeight: FontWeight.w700,
       letterSpacing: -0.3,
       color: AppColors.navy,
+      fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
     ),
     headlineSmall: TextStyle(
       fontSize: 20,
@@ -273,12 +278,6 @@ abstract final class AppTheme {
         actionsIconTheme: IconThemeData(
           color: isDark ? AppColors.darkTextPrimary : AppColors.white,
         ),
-        shape: Border(
-          bottom: BorderSide(
-            color: isDark ? AppColors.darkBorder : AppColors.tangerine,
-            width: isDark ? 1 : 1.5,
-          ),
-        ),
       ),
       drawerTheme: DrawerThemeData(
         backgroundColor: isDark ? AppColors.darkSurface : AppColors.background,
@@ -306,10 +305,10 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.tangerine,
-        foregroundColor: isDark ? AppColors.navyDeep : AppColors.textPrimary,
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: AppColors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -458,6 +457,49 @@ abstract final class AppTheme {
           color: AppColors.tangerine,
         ),
         dividerColor: Colors.transparent,
+      ),
+      // Motion: spec-aligned page transitions capped at 300ms — a gentle
+      // fade-up on Material platforms and the native Cupertino slide with
+      // edge-swipe back on Apple platforms.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
+      // Every AlertDialog in the app inherits the BlueFlow surface,
+      // border and type scale instead of the stock Material look.
+      dialogTheme: DialogThemeData(
+        backgroundColor: isDark ? AppColors.darkCard : AppColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.border,
+          ),
+        ),
+        titleTextStyle: textTheme.headlineSmall,
+        contentTextStyle: textTheme.bodyMedium,
+      ),
+      // Bottom sheets (announcements, events, quick actions) share one
+      // rounded-top surface whether or not a screen sets a custom shape.
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: isDark ? AppColors.darkCard : AppColors.surface,
+        elevation: 0,
+        clipBehavior: Clip.antiAlias,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : AppColors.navy,
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+        ),
+        textStyle: textTheme.labelSmall?.copyWith(color: AppColors.white),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(

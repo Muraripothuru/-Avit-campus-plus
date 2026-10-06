@@ -157,6 +157,62 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('an invalid student ID shows the expected format error', (
+    WidgetTester tester,
+  ) async {
+    await pumpForm(tester);
+    await tester.ensureVisible(find.byType(TextFormField).at(1));
+    await tester.pump();
+    await tester.enterText(find.byType(TextFormField).at(1), '12345');
+    await tester.pump();
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Format: AVIT2026CS001'), findsOneWidget);
+    expect(find.text('Review your request'), findsNothing);
+
+    await tester.pump(const Duration(seconds: 4));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Back from the review step keeps everything the student typed', (
+    WidgetTester tester,
+  ) async {
+    await pumpForm(tester);
+    await fillDetails(tester);
+
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Review your request'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Back'));
+    await tester.pump();
+    await tester.tap(find.text('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Review your request'), findsNothing);
+    expect(find.text('Student details'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextFormField, 'Projector shows no signal in AB-204'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Please send a technician before the afternoon'),
+      findsOneWidget,
+    );
+    expect(find.text('High'), findsOneWidget);
+    expect(find.text('Email'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 4));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('valid details reach the review step, declaration gates '
       'submit, then a summary with a reference is confirmed', (
     WidgetTester tester,
@@ -257,6 +313,10 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Facilities & Maintenance'));
     await tester.pump(const Duration(milliseconds: 400));
+    // The menu parks the selected option at the top, so the first category
+    // sits just above the built range and needs a small drag to reveal it.
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, 120));
+    await tester.pump();
     await tester.tap(find.text('IT Helpdesk'));
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('Block / room number'), findsNothing);
@@ -357,6 +417,13 @@ void main() {
     test('full name needs at least two words', () {
       expect(ServiceRequestRules.fullName('Cher'), isNotNull);
       expect(ServiceRequestRules.fullName('Ananya Sharma'), isNull);
+    });
+
+    test('student ID must match the AVIT format', () {
+      expect(ServiceRequestRules.studentIdOk(null), isFalse);
+      expect(ServiceRequestRules.studentIdOk(''), isFalse);
+      expect(ServiceRequestRules.studentIdOk('12345'), isFalse);
+      expect(ServiceRequestRules.studentIdOk('AVIT2026CS001'), isTrue);
     });
   });
 }

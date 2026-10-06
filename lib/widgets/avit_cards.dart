@@ -161,7 +161,6 @@ class AVITSectionHeader extends StatelessWidget {
     this.actionLabel,
     this.onAction,
     this.padding = const EdgeInsets.only(
-      left: AppSpacing.xs,
       right: AppSpacing.xs,
       bottom: AppSpacing.sm,
     ),
@@ -191,7 +190,9 @@ class AVITSectionHeader extends StatelessWidget {
                   margin: const EdgeInsets.only(right: AppSpacing.sm, top: 3),
                   decoration: const BoxDecoration(
                     color: AppColors.tangerine,
-                    borderRadius: BorderRadius.all(Radius.circular(4)),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(AppRadius.xs),
+                    ),
                   ),
                 ),
                 Expanded(
@@ -254,18 +255,30 @@ class AVITStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final (Color bg, Color fg) = switch (tone) {
       AVITStatusTone.neutral => (
         AppColors.surfaceMuted,
-        AppColors.textSecondary,
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
       ),
-      AVITStatusTone.info => (AppColors.infoSurface, AppColors.info),
-      AVITStatusTone.success => (AppColors.successSurface, AppColors.success),
-      AVITStatusTone.warning => (AppColors.warningSurface, AppColors.warning),
-      AVITStatusTone.danger => (AppColors.dangerSurface, AppColors.danger),
+      AVITStatusTone.info => (
+        AppColors.infoSurface,
+        isDark ? AppColors.info : AppColors.infoText,
+      ),
+      AVITStatusTone.success => (
+        AppColors.successSurface,
+        isDark ? AppColors.success : AppColors.successText,
+      ),
+      AVITStatusTone.warning => (
+        AppColors.warningSurface,
+        isDark ? AppColors.warning : AppColors.warningText,
+      ),
+      AVITStatusTone.danger => (
+        AppColors.dangerSurface,
+        isDark ? AppColors.danger : AppColors.dangerText,
+      ),
       AVITStatusTone.brand => (AppColors.lightBlue, AppColors.royalBlue),
     };
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? AppSpacing.sm : AppSpacing.md,

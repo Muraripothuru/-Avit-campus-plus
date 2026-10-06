@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../widgets/avit_inputs.dart';
 
-/// Intro splash shown only for unknown routes — the app itself opens
-/// straight into the dashboard with no login gate.
+/// Shown whenever there is no active session. Every control on this screen
+/// navigates, so a student can always reach sign in or sign up from here —
+/// never a dead end.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -62,10 +65,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                       ),
                                       child: Text(
                                         AppConstants.appName,
-                                        style: text.headlineMedium?.copyWith(
-                                          color: AppColors.navy,
-                                          fontWeight: FontWeight.w800,
-                                        ),
+                                        style: text.headlineMedium,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -115,6 +115,30 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                   ),
                                 ),
                                 const SizedBox(height: AppSpacing.lg),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: AVITButton(
+                                    label: 'Sign in',
+                                    icon: Icons.login_rounded,
+                                    onPressed: () => Navigator.pushNamed(
+                                      context,
+                                      Routes.login,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: AVITButton(
+                                    label: 'Create an account',
+                                    icon: Icons.person_add_alt_1_rounded,
+                                    variant: AVITButtonVariant.secondary,
+                                    onPressed: () => Navigator.pushNamed(
+                                      context,
+                                      Routes.signup,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),

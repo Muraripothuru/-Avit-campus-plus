@@ -6,9 +6,9 @@ import 'package:avit_campus_plus/core/routes/app_routes.dart';
 import 'package:avit_campus_plus/core/security/secure_store.dart';
 import 'package:avit_campus_plus/features/auth/login_screen.dart';
 import 'package:avit_campus_plus/features/auth/splash_screen.dart';
-import 'package:avit_campus_plus/features/auth/welcome_screen.dart';
 import 'package:avit_campus_plus/features/dashboard/dashboard_screen.dart';
 import 'package:avit_campus_plus/main.dart';
+import 'package:avit_campus_plus/navigation/unknown_route_screen.dart';
 
 /// Finds widgets that may still be offstage during a route transition.
 Finder screen<T>() => find.byType(T, skipOffstage: false);
@@ -27,7 +27,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
   }
 
-  testWidgets('app boots into the AVIT splash screen', (WidgetTester tester) async {
+  testWidgets('app boots into the AVIT splash screen', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(AvitCampusPlus(state: buildState()));
     await tester.pump();
 
@@ -38,7 +40,9 @@ void main() {
     expect(screen<DashboardScreen>(), findsOneWidget);
   });
 
-  testWidgets('protected routes require a session', (WidgetTester tester) async {
+  testWidgets('protected routes require a session', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(AvitCampusPlus(state: buildState()));
     await tester.pump();
 
@@ -56,7 +60,9 @@ void main() {
     expect(screen<DashboardScreen>(), findsOneWidget);
   });
 
-  testWidgets('unknown routes fall back to welcome', (WidgetTester tester) async {
+  testWidgets('unknown routes open the 404 screen with the route name', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(AvitCampusPlus(state: buildState()));
     await tester.pump();
 
@@ -66,7 +72,9 @@ void main() {
     nav.pushNamed('/does-not-exist');
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(screen<WelcomeScreen>(), findsOneWidget);
+    // The fallback names the route that could not be opened.
+    expect(screen<UnknownRouteScreen>(), findsOneWidget);
+    expect(find.text('/does-not-exist', skipOffstage: false), findsOneWidget);
 
     await settle(tester);
   });
