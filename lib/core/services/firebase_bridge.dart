@@ -21,6 +21,15 @@ class FirebaseBridge {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      // Identity comes up front: without it the security rules reject every
+      // write, so a failed sign-in downgrades the whole session to demo mode
+      // instead of surfacing errors. A persisted session needs no network.
+      final FirebaseAuth instance = FirebaseAuth.instance;
+      if (instance.currentUser != null) {
+        ready = true;
+        return;
+      }
+      await instance.signInAnonymously().timeout(const Duration(seconds: 5));
       ready = true;
     } catch (_) {
       ready = false;

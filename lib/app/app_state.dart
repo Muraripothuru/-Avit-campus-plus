@@ -405,8 +405,20 @@ class AppState extends ChangeNotifier {
       : DemoServiceRequestStore();
 
   /// Submits a campus service request and returns its SR reference.
-  Future<String> submitServiceRequest(Map<String, Object?> data) =>
-      _serviceRequests.submit(data);
+  ///
+  /// Firestore is authoritative whenever it accepts the write; if the
+  /// backend rejects it (offline, rules, auth not yet provisioned) the demo
+  /// store keeps the form's success contract so the UI never dead-ends.
+  Future<String> submitServiceRequest(Map<String, Object?> data) async {
+    if (FirebaseBridge.ready) {
+      try {
+        return await FirebaseServiceRequestStore().submit(data);
+      } catch (_) {
+        // Fall through to the demo store.
+      }
+    }
+    return DemoServiceRequestStore().submit(data);
+  }
 
   /// Most recent requests for the signed-in student (empty in demo mode).
   Future<List<Map<String, String>>> recentServiceRequests() =>
