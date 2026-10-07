@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:avit_campus_plus/app/app_state.dart';
 import 'package:avit_campus_plus/core/security/secure_store.dart';
+import 'package:avit_campus_plus/features/alerts/alerts_screen.dart';
 import 'package:avit_campus_plus/features/campus/campus_screen.dart';
+import 'package:avit_campus_plus/features/campus_services/gate_pass_screen.dart';
 import 'package:avit_campus_plus/features/dashboard/dashboard_screen.dart';
 import 'package:avit_campus_plus/features/staff/admin_dashboard_screen.dart';
 import 'package:avit_campus_plus/features/staff/security_dashboard_screen.dart';
@@ -202,6 +204,51 @@ void main() {
     ) async {
       await openRoute(tester, '/campus', email: admin);
       expect(find.text('Not available', skipOffstage: false), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('security alerts are filtered', () {
+    testWidgets('security only receives security and system alerts', (
+      WidgetTester tester,
+    ) async {
+      await openRoute(tester, '/alerts', email: security);
+
+      expect(find.byType(AlertsScreen, skipOffstage: false), findsOneWidget);
+      expect(find.text('Gate pass approved'), findsOneWidget);
+      expect(find.text('Password changed'), findsOneWidget);
+      expect(find.text('Exam time table published'), findsNothing);
+      expect(find.text('Hackathon registration closing soon'), findsNothing);
+      expect(find.text('Academic'), findsNothing);
+      expect(find.text('Hostel'), findsNothing);
+      expect(find.text('Transport'), findsNothing);
+      expect(find.text('Security'), findsWidgets);
+      expect(find.text('System'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('opening a security alert never reaches a student screen', (
+      WidgetTester tester,
+    ) async {
+      await openRoute(tester, '/alerts', email: security);
+
+      await tester.tap(find.text('Gate pass approved'));
+      await pumpFrames(tester, count: 6);
+
+      expect(find.byType(GatePassScreen, skipOffstage: false), findsNothing);
+      expect(find.byType(AlertsScreen, skipOffstage: false), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('students still receive every alert category', (
+      WidgetTester tester,
+    ) async {
+      await openRoute(tester, '/alerts', email: student);
+
+      expect(find.text('Gate pass approved'), findsOneWidget);
+      expect(find.text('Exam time table published'), findsOneWidget);
+      expect(find.text('Academic'), findsWidgets);
+      expect(find.text('Hostel'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
   });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_state.dart';
+import '../../core/auth/access_policy.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
@@ -11,6 +12,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/snackbar.dart';
 import '../../models/announcement.dart';
 import '../../models/app_notification.dart';
+import '../../models/user.dart';
 import '../../widgets/avit_cards.dart';
 import '../../widgets/avit_content_cards.dart';
 import '../../widgets/avit_feedback.dart';
@@ -36,6 +38,9 @@ class _AlertsScreenState extends State<AlertsScreen>
   @override
   bool get wantKeepAlive => true;
 
+  UserRole get _role =>
+      AppScope.of(context).state.user?.role ?? UserRole.student;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -44,6 +49,7 @@ class _AlertsScreenState extends State<AlertsScreen>
 
   Future<void> _load() async {
     final AppDependencies deps = AppScope.of(context).state.deps;
+    final UserRole role = _role;
     setState(() {
       _loading = true;
       _error = null;
@@ -53,7 +59,13 @@ class _AlertsScreenState extends State<AlertsScreen>
       final List<Announcement> anns = await deps.content.announcements();
       if (!mounted) return;
       setState(() {
-        _items = notes;
+        // Only the categories this role subscribes to ever reach the list.
+        _items = notes
+            .where(
+              (AppNotification n) =>
+                  AccessPolicy.seesAlertCategory(role, n.category),
+            )
+            .toList(growable: false);
         _announcements = anns;
         _loading = false;
       });
@@ -112,14 +124,20 @@ class _AlertsScreenState extends State<AlertsScreen>
               children: <Widget>[
                 for (final (String, NotificationCategory?) chip
                     in <(String, NotificationCategory?)>[
-                      ('All', null),
-                      ('Academic', NotificationCategory.academic),
-                      ('Events', NotificationCategory.events),
-                      ('Security', NotificationCategory.security),
-                      ('Hostel', NotificationCategory.hostel),
-                      ('Transport', NotificationCategory.transport),
-                      ('System', NotificationCategory.system),
-                    ])
+                          ('All', null),
+                          ('Academic', NotificationCategory.academic),
+                          ('Events', NotificationCategory.events),
+                          ('Security', NotificationCategory.security),
+                          ('Hostel', NotificationCategory.hostel),
+                          ('Transport', NotificationCategory.transport),
+                          ('System', NotificationCategory.system),
+                        ]
+                        .where(
+                          (chip) =>
+                              chip.$2 == null ||
+                              AccessPolicy.seesAlertCategory(_role, chip.$2!),
+                        )
+                        .toList())
                   Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: ChoiceChip(
@@ -200,9 +218,12 @@ class _AlertsScreenState extends State<AlertsScreen>
       final int i = _items.indexWhere((AppNotification x) => x.id == n.id);
       if (i >= 0) _items[i] = _items[i].copyWith(read: true);
     });
-    if (n.actionRoute != null && Routes.protected.contains(n.actionRoute)) {
+    final String? route = n.actionRoute;
+    if (route != null &&
+        Routes.protected.contains(route) &&
+        AccessPolicy.allows(_role, route)) {
       if (!mounted) return;
-      Navigator.pushNamed(context, n.actionRoute!);
+      Navigator.pushNamed(context, route);
     }
   }
 

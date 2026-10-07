@@ -57,7 +57,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
   Future<void> _verify(String raw) async {
     final String code = raw.trim();
     if (code.isEmpty || _checking) return;
-    if (_lastCode.value == code) return;
+    // The camera fires continuously on the same frame — debounce that path
+    // only, so a manual re-check of the same token always runs again.
+    if (_showCamera && _lastCode.value == code) return;
     _lastCode.value = code;
 
     final AppState state = AppScope.of(context).state;
@@ -74,8 +76,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
       } else {
         result = await state.deps.gatePasses.verifyQr(code);
         if (!result.isAccepted && result.status == QrScanStatus.invalid) {
-          final ScanResult visitor =
-              await state.deps.visitorPasses.verifyQr(code);
+          final ScanResult visitor = await state.deps.visitorPasses.verifyQr(
+            code,
+          );
           if (visitor.status != QrScanStatus.invalid) result = visitor;
         }
       }
@@ -93,11 +96,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
     });
 
     if (result.isAccepted) {
-      showAVITSnackBar(context,
-          message: result.message, tone: AVITSnackTone.success);
+      showAVITSnackBar(
+        context,
+        message: result.message,
+        tone: AVITSnackTone.success,
+      );
     } else {
-      showAVITSnackBar(context,
-          message: result.message, tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: result.message,
+        tone: AVITSnackTone.error,
+      );
     }
     if (_showCamera) {
       await Future<void>.delayed(const Duration(seconds: 3));
@@ -106,20 +115,20 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   AVITStatusTone _toneFor(QrScanStatus status) => switch (status) {
-        QrScanStatus.valid => AVITStatusTone.success,
-        QrScanStatus.expired => AVITStatusTone.warning,
-        QrScanStatus.used => AVITStatusTone.info,
-        QrScanStatus.revoked => AVITStatusTone.danger,
-        QrScanStatus.invalid => AVITStatusTone.danger,
-      };
+    QrScanStatus.valid => AVITStatusTone.success,
+    QrScanStatus.expired => AVITStatusTone.warning,
+    QrScanStatus.used => AVITStatusTone.info,
+    QrScanStatus.revoked => AVITStatusTone.danger,
+    QrScanStatus.invalid => AVITStatusTone.danger,
+  };
 
   IconData _iconFor(QrScanStatus status) => switch (status) {
-        QrScanStatus.valid => Icons.verified_rounded,
-        QrScanStatus.expired => Icons.schedule_rounded,
-        QrScanStatus.used => Icons.task_alt_rounded,
-        QrScanStatus.revoked => Icons.block_rounded,
-        QrScanStatus.invalid => Icons.gpp_bad_rounded,
-      };
+    QrScanStatus.valid => Icons.verified_rounded,
+    QrScanStatus.expired => Icons.schedule_rounded,
+    QrScanStatus.used => Icons.task_alt_rounded,
+    QrScanStatus.revoked => Icons.block_rounded,
+    QrScanStatus.invalid => Icons.gpp_bad_rounded,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -185,36 +194,39 @@ class _ScannerScreenState extends State<ScannerScreen> {
                                   }
                                 }
                               },
-                              errorBuilder: (BuildContext context,
-                                  MobileScannerException error) {
-                                return ColoredBox(
-                                  color: AppColors.navyDeep,
-                                  child: Center(
-                                    child: Padding(
-                                      padding: AppSpacing.cardPadding,
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: <Widget>[
-                                          const Icon(
-                                            Icons.no_photography_rounded,
-                                            color: AppColors.white,
-                                            size: 34,
+                              errorBuilder:
+                                  (
+                                    BuildContext context,
+                                    MobileScannerException error,
+                                  ) {
+                                    return ColoredBox(
+                                      color: AppColors.navyDeep,
+                                      child: Center(
+                                        child: Padding(
+                                          padding: AppSpacing.cardPadding,
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: <Widget>[
+                                              const Icon(
+                                                Icons.no_photography_rounded,
+                                                color: AppColors.white,
+                                                size: 34,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Camera unavailable on this device. '
+                                                'Use manual entry below.',
+                                                textAlign: TextAlign.center,
+                                                style: text.bodySmall?.copyWith(
+                                                  color: AppColors.white,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Camera unavailable on this device. '
-                                            'Use manual entry below.',
-                                            textAlign: TextAlign.center,
-                                            style: text.bodySmall?.copyWith(
-                                              color: AppColors.white,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                );
-                              },
+                                    );
+                                  },
                             ),
                             const Center(
                               child: SizedBox(
@@ -233,13 +245,25 @@ class _ScannerScreenState extends State<ScannerScreen> {
               children: <Widget>[
                 IconButton.filledTonal(
                   tooltip: 'Toggle torch',
-                  onPressed: () => _camera?.toggleTorch(),
+                  onPressed: () async {
+                    try {
+                      await _camera?.toggleTorch();
+                    } catch (_) {
+                      // No torch / unsupported platform (e.g. desktop web).
+                    }
+                  },
                   icon: const Icon(Icons.flashlight_on_rounded),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 IconButton.filledTonal(
                   tooltip: 'Switch camera',
-                  onPressed: () => _camera?.switchCamera(),
+                  onPressed: () async {
+                    try {
+                      await _camera?.switchCamera();
+                    } catch (_) {
+                      // Single-camera devices simply ignore this.
+                    }
+                  },
                   icon: const Icon(Icons.cameraswitch_rounded),
                 ),
               ],
@@ -299,10 +323,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
-                        child: Text(
-                          _result!.message,
-                          style: text.titleSmall,
-                        ),
+                        child: Text(_result!.message, style: text.titleSmall),
                       ),
                       AVITStatusChip(
                         label: _result!.status.name.toUpperCase(),
@@ -313,8 +334,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   ),
                   if (_result!.holderName.isNotEmpty) ...<Widget>[
                     const SizedBox(height: AppSpacing.sm),
-                    Text('Holder: ${_result!.holderName}',
-                        style: text.bodySmall),
+                    Text(
+                      'Holder: ${_result!.holderName}',
+                      style: text.bodySmall,
+                    ),
                   ],
                   if (_result!.title.isNotEmpty) ...<Widget>[
                     const SizedBox(height: 4),
@@ -341,9 +364,7 @@ class _ScanFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _FramePainter(
-        color: AppColors.white.withValues(alpha: 0.9),
-      ),
+      painter: _FramePainter(color: AppColors.white.withValues(alpha: 0.9)),
     );
   }
 }

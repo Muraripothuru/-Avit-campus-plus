@@ -1,4 +1,5 @@
 import '../../core/routes/app_routes.dart';
+import '../../core/security/qr_token_service.dart';
 import '../../models/academics.dart';
 import '../../models/announcement.dart';
 import '../../models/app_notification.dart';
@@ -495,6 +496,15 @@ abstract final class DemoCatalog {
       reviewerComment: 'Approved by warden',
       reviewedBy: 'Deepa Menon',
       reviewedAt: DateTime.now().subtract(const Duration(hours: 4)),
+      // Approved before boot, so issue the signed QR the same way a live
+      // review would — otherwise there is nothing to scan at the gate.
+      qrToken: QrTokenService.issue(
+        type: 'gate',
+        requestId: 'gp_1',
+        holderId: DemoCatalog.student.studentId!,
+        expiresAt: DateTime.now().add(const Duration(days: 1, hours: 7)),
+        destination: 'Apollo Clinic, Vandalur',
+      ),
     ),
     GatePass(
       id: 'gp_2',
@@ -557,6 +567,14 @@ abstract final class DemoCatalog {
       createdAt: DateTime.now().subtract(const Duration(hours: 8)),
       status: PassStatus.approved,
       reviewedBy: 'Deepa Menon',
+      // Same as the seeded gate pass: the review that never ran at boot
+      // still needs to leave a scannable token behind.
+      qrToken: QrTokenService.issue(
+        type: 'visitor',
+        requestId: 'vp_1',
+        holderId: DemoCatalog.student.studentId!,
+        expiresAt: DateTime.now().add(const Duration(days: 1, hours: 12)),
+      ),
     ),
     VisitorPass(
       id: 'vp_2',

@@ -638,6 +638,17 @@ class AVITQrPanel extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text('Show this code at the gate', style: text.labelMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Pass token',
+            style: text.labelSmall?.copyWith(color: AppColors.textTertiary),
+          ),
+          const SizedBox(height: 2),
+          SelectableText(
+            data,
+            textAlign: TextAlign.center,
+            style: text.bodySmall?.copyWith(fontFamily: 'monospace'),
+          ),
         ],
       ),
     );

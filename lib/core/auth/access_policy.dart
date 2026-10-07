@@ -1,3 +1,4 @@
+import '../../models/app_notification.dart';
 import '../../models/user.dart';
 import '../routes/app_routes.dart';
 
@@ -60,6 +61,19 @@ abstract final class AccessPolicy {
     UserRole.warden => common.contains(route) || _warden.contains(route),
     UserRole.admin => common.contains(route) || _admin.contains(route),
   };
+
+  /// Alert categories each role subscribes to on the Alerts screen.
+  ///
+  /// A security officer works the gate and the incident desk, so only
+  /// security and system-wide notices belong on their list — academic,
+  /// events, hostel and transport chatter stays with the other roles.
+  static bool seesAlertCategory(UserRole role, NotificationCategory category) =>
+      switch (role) {
+        UserRole.security =>
+          category == NotificationCategory.security ||
+              category == NotificationCategory.system,
+        _ => true,
+      };
 
   /// Landing destination after sign-in or a restored session.
   static String homeRouteFor(UserRole? role) => switch (role) {
