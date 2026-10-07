@@ -17,7 +17,11 @@ import '../../widgets/avit_inputs.dart';
 
 /// Security desk: gate activity, pass verification and incident register.
 class SecurityDashboardScreen extends StatefulWidget {
-  const SecurityDashboardScreen({super.key});
+  const SecurityDashboardScreen({super.key, this.embedded = false});
+
+  /// When true the shell supplies the scaffold chrome (app bar, drawer,
+  /// bottom navigation) and this screen only renders its body.
+  final bool embedded;
 
   @override
   State<SecurityDashboardScreen> createState() =>
@@ -55,7 +59,8 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
     });
     try {
       final List<GatePass> gate = await deps.security.activeGatePasses();
-      final List<VisitorPass> visitors = await deps.security.activeVisitorPasses();
+      final List<VisitorPass> visitors = await deps.security
+          .activeVisitorPasses();
       final List<GateMovement> moves = await deps.security.recentMovements();
       final List<IncidentReport> incidents = await deps.security.incidents();
       if (!mounted) return;
@@ -78,30 +83,40 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
   Future<void> _checkVehicle() async {
     final String number = _vehicle.text.trim().toUpperCase();
     if (number.length < 6) {
-      showAVITSnackBar(context,
-          message: 'Enter a valid vehicle number',
-          tone: AVITSnackTone.warning);
+      showAVITSnackBar(
+        context,
+        message: 'Enter a valid vehicle number',
+        tone: AVITSnackTone.warning,
+      );
       return;
     }
     setState(() => _checkingVehicle = true);
     try {
-      final VehicleRecord? record =
-          await AppScope.of(context).state.deps.security.verifyVehicle(number);
+      final VehicleRecord? record = await AppScope.of(context)
+          .state
+          .deps
+          .security
+          .verifyVehicle(number);
       if (!mounted) return;
       setState(() {
         _vehicleRecord = record;
         _checkingVehicle = false;
       });
       if (record == null) {
-        showAVITSnackBar(context,
-            message: 'No vehicle found for $number',
-            tone: AVITSnackTone.error);
+        showAVITSnackBar(
+          context,
+          message: 'No vehicle found for $number',
+          tone: AVITSnackTone.error,
+        );
       }
     } catch (_) {
       if (!mounted) return;
       setState(() => _checkingVehicle = false);
-      showAVITSnackBar(context,
-          message: 'Vehicle lookup failed', tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: 'Vehicle lookup failed',
+        tone: AVITSnackTone.error,
+      );
     }
   }
 
@@ -116,29 +131,39 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
     if (_loading) return const LoadingList(itemCount: 6);
     if (_error != null) {
       return Scaffold(
-        appBar: const AVITAppBar(title: 'Security Desk'),
+        appBar: widget.embedded
+            ? null
+            : const AVITAppBar(title: 'Security Desk'),
         body: AVITErrorState(message: _error!, onRetry: _load),
       );
     }
 
     return Scaffold(
-      appBar: AVITAppBar(
-        title: 'Security Desk',
-        subtitle: 'Main gate • Shift Log',
-        actions: <Widget>[
-          IconButton(
-            tooltip: 'Scan pass',
-            onPressed: () =>
-                Navigator.pushNamed(context, Routes.scanner, arguments: true),
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, Routes.reportIncident),
-        icon: const Icon(Icons.report_problem_rounded),
-        label: const Text('Incident'),
-      ),
+      appBar: widget.embedded
+          ? null
+          : AVITAppBar(
+              title: 'Security Desk',
+              subtitle: 'Main gate • Shift Log',
+              actions: <Widget>[
+                IconButton(
+                  tooltip: 'Scan pass',
+                  onPressed: () => Navigator.pushNamed(
+                    context,
+                    Routes.scanner,
+                    arguments: true,
+                  ),
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                ),
+              ],
+            ),
+      floatingActionButton: widget.embedded
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () =>
+                  Navigator.pushNamed(context, Routes.reportIncident),
+              icon: const Icon(Icons.report_problem_rounded),
+              label: const Text('Incident'),
+            ),
       body: AVITRefresh(
         onRefresh: _load,
         child: ListView(
@@ -218,8 +243,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                           compact: true,
                           expand: false,
                           loading: _checkingVehicle,
-                          onPressed:
-                              _checkingVehicle ? null : _checkVehicle,
+                          onPressed: _checkingVehicle ? null : _checkVehicle,
                         ),
                       ),
                     ],
@@ -229,7 +253,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                     AVITStatusChip(
                       label: _vehicleRecord!.verified
                           ? 'Verified • ${_vehicleRecord!.owner} '
-                              '(${_vehicleRecord!.type})'
+                                '(${_vehicleRecord!.type})'
                           : 'Unregistered vehicle',
                       tone: _vehicleRecord!.verified
                           ? AVITStatusTone.success
@@ -270,7 +294,8 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
             const SizedBox(height: AppSpacing.lg),
             AVITSectionHeader(
               title: 'Passes valid right now',
-              subtitle: '${_gatePasses.length} gate • '
+              subtitle:
+                  '${_gatePasses.length} gate • '
                   '${_visitors.length} visitor',
             ),
             if (_gatePasses.isEmpty && _visitors.isEmpty)
@@ -283,7 +308,8 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
               for (final GatePass pass in _gatePasses)
                 _PassCard(
                   title: pass.studentName,
-                  subtitle: '${pass.destination} • until '
+                  subtitle:
+                      '${pass.destination} • until '
                       '${Formatters.time.format(pass.inBy)}',
                   qr: pass.qrToken ?? '',
                   tone: AVITStatusTone.success,
@@ -293,18 +319,17 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                           compact: true,
                           variant: AVITButtonVariant.secondary,
                           onPressed: () async {
-                            await AppScope.of(context)
-                                .state
-                                .deps
-                                .gatePasses
+                            await AppScope.of(context).state.deps.gatePasses
                                 .markUsed(
                                   passId: pass.id,
                                   guard: user?.fullName ?? 'Security',
                                 );
                             if (!context.mounted) return;
-                            showAVITSnackBar(context,
-                                message: 'Gate pass closed',
-                                tone: AVITSnackTone.success);
+                            showAVITSnackBar(
+                              context,
+                              message: 'Gate pass closed',
+                              tone: AVITSnackTone.success,
+                            );
                             await _load();
                           },
                         )
@@ -313,7 +338,8 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
               for (final VisitorPass pass in _visitors)
                 _PassCard(
                   title: pass.visitorName,
-                  subtitle: '${pass.purpose} • '
+                  subtitle:
+                      '${pass.purpose} • '
                       '${Formatters.monthDay.format(pass.visitDate)}',
                   qr: pass.qrToken ?? '',
                   tone: AVITStatusTone.info,
@@ -323,18 +349,17 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                           compact: true,
                           variant: AVITButtonVariant.secondary,
                           onPressed: () async {
-                            await AppScope.of(context)
-                                .state
-                                .deps
-                                .visitorPasses
+                            await AppScope.of(context).state.deps.visitorPasses
                                 .markUsed(
                                   passId: pass.id,
                                   guard: user?.fullName ?? 'Security',
                                 );
                             if (!context.mounted) return;
-                            showAVITSnackBar(context,
-                                message: 'Visitor exit recorded',
-                                tone: AVITSnackTone.success);
+                            showAVITSnackBar(
+                              context,
+                              message: 'Visitor exit recorded',
+                              tone: AVITSnackTone.success,
+                            );
                             await _load();
                           },
                         )
@@ -367,8 +392,8 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                           color: r.severity == 'high'
                               ? AppColors.danger
                               : r.severity == 'medium'
-                                  ? AppColors.warning
-                                  : AppColors.info,
+                              ? AppColors.warning
+                              : AppColors.info,
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
@@ -449,9 +474,7 @@ class _MovementRow extends StatelessWidget {
             children: <Widget>[
               Text(
                 Formatters.time.format(movement.time),
-                style: text.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: text.labelMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               Text(
                 isEntry ? 'Entry' : 'Exit',
@@ -493,9 +516,7 @@ class _PassCard extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Expanded(
-                  child: Text(title, style: text.titleSmall),
-                ),
+                Expanded(child: Text(title, style: text.titleSmall)),
                 if (qr.isNotEmpty)
                   AVITStatusChip(
                     label: 'QR active',

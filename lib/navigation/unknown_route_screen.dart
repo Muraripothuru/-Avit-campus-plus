@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/routes/app_routes.dart';
+import '../app/app_scope.dart';
+import '../core/auth/access_policy.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../widgets/avit_app_bar.dart';
@@ -65,7 +66,9 @@ class UnknownRouteScreen extends StatelessWidget {
                 label: 'Go to dashboard',
                 icon: Icons.home_rounded,
                 onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                  Routes.dashboard,
+                  AccessPolicy.homeRouteFor(
+                    AppScope.of(context).state.user?.role,
+                  ),
                   (Route<dynamic> route) => false,
                 ),
               ),

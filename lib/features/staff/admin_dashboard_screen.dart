@@ -15,7 +15,11 @@ import '../../widgets/avit_feedback.dart';
 
 /// Administrator overview: campus KPIs, trends, users and quick actions.
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  const AdminDashboardScreen({super.key, this.embedded = false});
+
+  /// When true the shell supplies the scaffold chrome and this screen only
+  /// renders its body.
+  final bool embedded;
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -59,10 +63,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _changeRole(AppUser user, UserRole role) async {
     try {
-      await AppScope.of(context)
-          .state
-          .deps
-          .admin
+      await AppScope.of(context).state.deps.admin
           .setUserRole(userId: user.id, role: role.apiValue);
       if (!mounted) return;
       showAVITSnackBar(
@@ -73,8 +74,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       await _load();
     } catch (_) {
       if (!mounted) return;
-      showAVITSnackBar(context,
-          message: 'Role update failed', tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: 'Role update failed',
+        tone: AVITSnackTone.error,
+      );
     }
   }
 
@@ -127,7 +131,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (_loading) return const LoadingList(itemCount: 6);
     if (_error != null || stats == null) {
       return Scaffold(
-        appBar: const AVITAppBar(title: 'Administration'),
+        appBar: widget.embedded
+            ? null
+            : const AVITAppBar(title: 'Administration'),
         body: AVITErrorState(
           message: _error ?? 'No data available',
           onRetry: _load,
@@ -136,17 +142,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     return Scaffold(
-      appBar: AVITAppBar(
-        title: 'Administration',
-        subtitle: 'Campus-wide control centre',
-        actions: <Widget>[
-          IconButton(
-            tooltip: 'Audit log',
-            onPressed: () => Navigator.pushNamed(context, Routes.auditLog),
-            icon: const Icon(Icons.receipt_long_rounded),
-          ),
-        ],
-      ),
+      appBar: widget.embedded
+          ? null
+          : AVITAppBar(
+              title: 'Administration',
+              subtitle: 'Campus-wide control centre',
+              actions: <Widget>[
+                IconButton(
+                  tooltip: 'Audit log',
+                  onPressed: () =>
+                      Navigator.pushNamed(context, Routes.auditLog),
+                  icon: const Icon(Icons.receipt_long_rounded),
+                ),
+              ],
+            ),
       body: AVITRefresh(
         onRefresh: _load,
         child: ListView(
@@ -308,9 +317,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            AVITSectionHeader(
-              title: 'Quick actions',
-            ),
+            AVITSectionHeader(title: 'Quick actions'),
             Row(
               children: <Widget>[
                 Expanded(
@@ -351,9 +358,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         child: Text(
                           user.fullName.isEmpty
                               ? '?'
-                              : user.fullName
-                                  .substring(0, 1)
-                                  .toUpperCase(),
+                              : user.fullName.substring(0, 1).toUpperCase(),
                           style: const TextStyle(
                             color: AppColors.primaryBlue,
                             fontWeight: FontWeight.w700,
@@ -375,8 +380,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         tone: user.role == UserRole.admin
                             ? AVITStatusTone.danger
                             : user.role == UserRole.student
-                                ? AVITStatusTone.brand
-                                : AVITStatusTone.info,
+                            ? AVITStatusTone.brand
+                            : AVITStatusTone.info,
                         compact: true,
                       ),
                       const Icon(Icons.chevron_right_rounded, size: 20),

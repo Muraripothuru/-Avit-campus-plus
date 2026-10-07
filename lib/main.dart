@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'app/app_scope.dart';
 import 'app/app_state.dart';
+import 'core/auth/access_policy.dart';
 import 'core/constants/app_constants.dart';
 import 'core/routes/app_routes.dart';
 import 'core/services/firebase_bridge.dart';
@@ -43,11 +44,6 @@ import 'features/safety/emergency_screen.dart';
 import 'features/safety/report_incident_screen.dart';
 import 'features/safety/scanner_screen.dart';
 import 'features/search/search_screen.dart';
-import 'features/staff/admin_dashboard_screen.dart';
-import 'features/staff/announcements_screen.dart';
-import 'features/staff/audit_log_screen.dart';
-import 'features/staff/security_dashboard_screen.dart';
-import 'features/staff/warden_dashboard_screen.dart';
 import 'models/user.dart';
 import 'navigation/app_shell.dart';
 import 'navigation/unknown_route_screen.dart';
@@ -80,25 +76,16 @@ class AvitCampusPlus extends StatefulWidget {
 class _AvitCampusPlusState extends State<AvitCampusPlus> {
   AppState get _state => widget.state;
 
-  /// Role gates for staff-only destinations.
-  bool _hasRole(String route, AppUser? user) {
-    if (user == null) return false;
-    return switch (route) {
-      Routes.security =>
-        user.role == UserRole.security || user.role == UserRole.admin,
-      Routes.reportIncident =>
-        user.role == UserRole.security || user.role == UserRole.admin,
-      Routes.warden =>
-        user.role == UserRole.warden || user.role == UserRole.admin,
-      Routes.admin ||
-      Routes.announcements ||
-      Routes.auditLog => user.role == UserRole.admin,
-      _ => true,
-    };
-  }
+  /// Role gate: students never reach staff dashboards and staff accounts
+  /// only ever reach their own duty pages plus the shared ones.
+  bool _hasRole(String route, AppUser? user) =>
+      user != null && AccessPolicy.allows(user.role, route);
 
   Widget _shellFor(RouteSettings settings) => AppShell(
-    initialIndex: AppShell.tabIndexForRoute(settings.name ?? Routes.dashboard),
+    initialIndex: AppShell.tabIndexForRoute(
+      settings.name ?? Routes.dashboard,
+      _state.user?.role,
+    ),
   );
 
   Route<dynamic> _build(RouteSettings settings, Widget screen) =>
@@ -135,12 +122,18 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       Routes.forgotPassword => const ForgotPasswordScreen(),
       Routes.resetPassword => const ForgotPasswordScreen(),
 
-      // Bottom navigation sections
+      // Bottom navigation sections — the shell renders the role's own tab
+      // set, so /security for a security officer opens their desk tab etc.
       Routes.dashboard ||
       Routes.campus ||
       Routes.activities ||
       Routes.alerts ||
-      Routes.profile => _shellFor(settings),
+      Routes.profile ||
+      Routes.security ||
+      Routes.warden ||
+      Routes.admin ||
+      Routes.announcements ||
+      Routes.auditLog => _shellFor(settings),
 
       // Academics
       Routes.academics => const AcademicsScreen(),
@@ -171,13 +164,6 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       Routes.reportIncident => const ReportIncidentScreen(),
       Routes.complaints => const ComplaintsScreen(),
       Routes.scanner => const ScannerScreen(),
-
-      // Staff
-      Routes.security => const SecurityDashboardScreen(),
-      Routes.warden => const WardenDashboardScreen(),
-      Routes.admin => const AdminDashboardScreen(),
-      Routes.announcements => const AnnouncementsScreen(),
-      Routes.auditLog => const AuditLogScreen(),
 
       // Account
       Routes.settings => const SettingsScreen(),

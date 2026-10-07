@@ -16,7 +16,11 @@ import '../../widgets/avit_inputs.dart';
 
 /// Warden console: approve gate/visitor requests and track hostel matters.
 class WardenDashboardScreen extends StatefulWidget {
-  const WardenDashboardScreen({super.key});
+  const WardenDashboardScreen({super.key, this.embedded = false});
+
+  /// When true the shell supplies the scaffold chrome and this screen only
+  /// renders its body.
+  final bool embedded;
 
   @override
   State<WardenDashboardScreen> createState() => _WardenDashboardScreenState();
@@ -79,7 +83,9 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
           passId: id,
           approve: approve,
           reviewer: reviewer,
-          comment: approve ? 'Approved by warden' : 'Not permitted at this time',
+          comment: approve
+              ? 'Approved by warden'
+              : 'Not permitted at this time',
         );
       } else {
         await state.deps.visitorPasses.decide(
@@ -100,15 +106,17 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _busyId = null);
-      showAVITSnackBar(context,
-          message: 'Could not update the request',
-          tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: 'Could not update the request',
+        tone: AVITSnackTone.error,
+      );
     }
   }
 
   Future<void> _showStudent(String studentId) async {
-    final AppUser? profile =
-        await AppScope.of(context).state.deps.warden.studentProfile(studentId);
+    final AppUser? profile = await AppScope.of(context).state.deps.warden
+        .studentProfile(studentId);
     if (!mounted) return;
     final TextTheme text = Theme.of(context).textTheme;
     showModalBottomSheet<void>(
@@ -127,8 +135,10 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text('No profile found for $studentId',
-                      style: text.titleSmall),
+                  Text(
+                    'No profile found for $studentId',
+                    style: text.titleSmall,
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   AVITButton(
                     label: 'Close',
@@ -160,8 +170,7 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
                         compact: true,
                       ),
                       AVITStatusChip(
-                        label:
-                            'Sem ${profile.semester ?? '—'}',
+                        label: 'Sem ${profile.semester ?? '—'}',
                         tone: AVITStatusTone.info,
                         compact: true,
                       ),
@@ -193,16 +202,20 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
     if (_loading) return const LoadingList(itemCount: 6);
     if (_error != null) {
       return Scaffold(
-        appBar: const AVITAppBar(title: 'Warden Console'),
+        appBar: widget.embedded
+            ? null
+            : const AVITAppBar(title: 'Warden Console'),
         body: AVITErrorState(message: _error!, onRetry: _load),
       );
     }
 
     return Scaffold(
-      appBar: AVITAppBar(
-        title: 'Warden Console',
-        subtitle: 'Hostel approvals & welfare',
-      ),
+      appBar: widget.embedded
+          ? null
+          : AVITAppBar(
+              title: 'Warden Console',
+              subtitle: 'Hostel approvals & welfare',
+            ),
       body: AVITRefresh(
         onRefresh: _load,
         child: ListView(
@@ -269,7 +282,8 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
                   title: pass.studentName,
                   meta: '${pass.studentId} • ${pass.destination}',
                   reason: pass.reason,
-                  window: '${Formatters.monthDay.format(pass.outAt)} '
+                  window:
+                      '${Formatters.monthDay.format(pass.outAt)} '
                       '${Formatters.time.format(pass.outAt)} – '
                       '${Formatters.time.format(pass.inBy)}',
                   busy: _busyId == pass.id,
@@ -328,8 +342,10 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.person_rounded),
-                        title: Text(_lateReturns[i].personName,
-                            style: text.titleSmall),
+                        title: Text(
+                          _lateReturns[i].personName,
+                          style: text.titleSmall,
+                        ),
                         subtitle: Text(
                           '${_lateReturns[i].personId} • due back by '
                           '${Formatters.time.format(_lateReturns[i].time)}',
@@ -434,9 +450,7 @@ class _ApprovalCard extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Expanded(
-                  child: Text(title, style: text.titleSmall),
-                ),
+                Expanded(child: Text(title, style: text.titleSmall)),
                 AVITStatusChip(
                   label: 'Pending',
                   tone: AVITStatusTone.warning,

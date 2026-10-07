@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app/app_scope.dart';
+import '../core/auth/access_policy.dart';
 import '../core/routes/app_routes.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/theme/app_colors.dart';
@@ -11,6 +12,11 @@ import '../features/alerts/alerts_screen.dart';
 import '../features/campus/campus_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/staff/admin_dashboard_screen.dart';
+import '../features/staff/announcements_screen.dart';
+import '../features/staff/audit_log_screen.dart';
+import '../features/staff/security_dashboard_screen.dart';
+import '../features/staff/warden_dashboard_screen.dart';
 import '../models/user.dart';
 import '../widgets/avit_app_bar.dart';
 import '../widgets/avit_avatar.dart';
@@ -22,13 +28,18 @@ import '../widgets/avit_drawer.dart';
 /// Implements the required structure:
 /// `Scaffold → AppBar + Drawer + Body + FloatingActionButton + BottomNavigationBar`
 /// and switches content with `currentIndex` / `onTap` / `setState()`.
+///
+/// The tab set is role-specific: students see the campus sections while
+/// security, warden and admin each get their own desk as the home tab, so
+/// staff never see student options and students never see staff ones.
 class AppShell extends StatefulWidget {
   const AppShell({super.key, this.initialIndex = 0});
 
   final int initialIndex;
 
-  static int tabIndexForRoute(String route) {
-    final int index = AppTab.values.indexWhere((AppTab t) => t.route == route);
+  static int tabIndexForRoute(String route, UserRole? role) {
+    final List<AppTab> tabs = AppTab.tabsFor(role ?? UserRole.student);
+    final int index = tabs.indexWhere((AppTab t) => t.route == route);
     return index < 0 ? 0 : index;
   }
 
@@ -41,7 +52,13 @@ class _AppShellState extends State<AppShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _switching = false;
 
-  AppTab get _tab => AppTab.values[_currentIndex];
+  /// The signed-in role's tab set — recomputed on every access so a role
+  /// change (sign-in/sign-out) can never leave a stale tab selected.
+  List<AppTab> _tabsFor(BuildContext context) =>
+      AppTab.tabsFor(AppScope.of(context).state.user?.role ?? UserRole.student);
+
+  AppTab _tabOf(List<AppTab> tabs) =>
+      _currentIndex < tabs.length ? tabs[_currentIndex] : tabs.first;
 
   /// Demonstrates `setState()` for content switching, as required.
   void _selectTab(int index) {
@@ -58,9 +75,9 @@ class _AppShellState extends State<AppShell> {
   void _handleDrawerNavigation(String route) {
     Navigator.of(_scaffoldKey.currentContext ?? context).pop();
     if (Routes.protected.contains(route)) {
-      final int index = AppShell.tabIndexForRoute(route);
-      final bool isTab = AppTab.values.any((AppTab t) => t.route == route);
-      if (isTab) {
+      final List<AppTab> tabs = _tabsFor(context);
+      final int index = tabs.indexWhere((AppTab t) => t.route == route);
+      if (index >= 0) {
         _selectTab(index);
       } else if (ModalRoute.of(context)?.settings.name != route) {
         Navigator.of(context).pushNamed(route);
@@ -68,33 +85,41 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  /// Contextual FAB: quick actions on Home, reminder on Activities.
+  /// Contextual FAB: quick actions on Home, role tools on staff desks.
   void _handleFab() {
-    switch (_tab) {
-      case AppTab.home:
+    switch (_tabOf(_tabsFor(context)).route) {
+      case Routes.dashboard:
         _showQuickActions();
-      case AppTab.activities:
+      case Routes.activities:
         AppScope.of(context).state.addReminder();
         showAVITSnackBar(
           context,
           message: 'Reminder created for your upcoming events',
           tone: AVITSnackTone.success,
         );
-      case AppTab.alerts:
+      case Routes.alerts:
         ScaffoldMessenger.of(context).clearSnackBars();
         showAVITSnackBar(
           context,
           message: 'All notifications marked as read',
           tone: AVITSnackTone.success,
         );
-      case AppTab.campus:
+      case Routes.campus:
         Navigator.of(context).pushNamed(Routes.emergency);
-      case AppTab.profile:
+      case Routes.profile:
         Navigator.of(context).pushNamed(Routes.settings);
+      case Routes.security:
+        Navigator.of(context).pushNamed(Routes.reportIncident);
+      case Routes.warden:
+        Navigator.of(context).pushNamed(Routes.complaints);
+      default:
+        break;
     }
   }
 
   void _showQuickActions() {
+    final UserRole role =
+        AppScope.of(context).state.user?.role ?? UserRole.student;
     final List<(IconData, String, String)> actions =
         <(IconData, String, String)>[
           (Icons.qr_code_scanner_rounded, 'Scan a pass', Routes.scanner),
@@ -103,7 +128,7 @@ class _AppShellState extends State<AppShell> {
           (Icons.hourglass_top_rounded, 'Smart queue', Routes.smartQueue),
           (Icons.map_rounded, 'Campus map', Routes.campusMap),
           (Icons.emergency_rounded, 'Emergency', Routes.emergency),
-        ];
+        ].where((action) => AccessPolicy.allows(role, action.$3)).toList();
 
     showModalBottomSheet<void>(
       context: context,
@@ -187,21 +212,52 @@ class _AppShellState extends State<AppShell> {
       });
     }
 
+    final List<AppTab> tabs = _tabsFor(context);
+    if (_currentIndex >= tabs.length) _currentIndex = 0;
+    final AppTab tab = _tabOf(tabs);
+
     final List<Widget> pages = <Widget>[
-      const DashboardScreen(key: ValueKey<String>('home')),
-      const CampusScreen(key: ValueKey<String>('campus')),
-      const ActivitiesScreen(key: ValueKey<String>('activities')),
-      const AlertsScreen(key: ValueKey<String>('alerts')),
-      const ProfileScreen(key: ValueKey<String>('profile')),
+      for (final AppTab t in tabs)
+        switch (t) {
+          AppTab.home => const DashboardScreen(key: ValueKey<String>('home')),
+          AppTab.campus => const CampusScreen(key: ValueKey<String>('campus')),
+          AppTab.activities => const ActivitiesScreen(
+            key: ValueKey<String>('activities'),
+          ),
+          AppTab.securityDesk => const SecurityDashboardScreen(
+            key: ValueKey<String>('security'),
+            embedded: true,
+          ),
+          AppTab.wardenDesk => const WardenDashboardScreen(
+            key: ValueKey<String>('warden'),
+            embedded: true,
+          ),
+          AppTab.adminDesk => const AdminDashboardScreen(
+            key: ValueKey<String>('admin'),
+            embedded: true,
+          ),
+          AppTab.announcements => const AnnouncementsScreen(
+            key: ValueKey<String>('announcements'),
+            embedded: true,
+          ),
+          AppTab.auditLog => const AuditLogScreen(
+            key: ValueKey<String>('audit'),
+            embedded: true,
+          ),
+          AppTab.alerts => const AlertsScreen(key: ValueKey<String>('alerts')),
+          AppTab.profile => const ProfileScreen(
+            key: ValueKey<String>('profile'),
+          ),
+        },
     ];
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: AVITAppBar(
-        title: _tab.label,
+        title: tab.label,
         subtitle: scope.state.user?.programme.isEmpty ?? true
             ? null
-            : _tabSubtitle,
+            : _subtitleFor(tab),
         showLogo: true,
         automaticallyImplyLeading: false,
         leading: Builder(
@@ -220,14 +276,13 @@ class _AppShellState extends State<AppShell> {
           AVITBadgeButton(
             icon: Icons.notifications_rounded,
             count: unread,
-            onPressed: () => _selectTab(AppTab.values.indexOf(AppTab.alerts)),
+            onPressed: () => _selectTab(tabs.indexOf(AppTab.alerts)),
           ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: IconButton(
               tooltip: 'Profile',
-              onPressed: () =>
-                  _selectTab(AppTab.values.indexOf(AppTab.profile)),
+              onPressed: () => _selectTab(tabs.indexOf(AppTab.profile)),
               icon: me == null
                   ? const CircleAvatar(
                       radius: 16,
@@ -244,7 +299,7 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
       drawer: AVITDrawer(
-        currentRoute: _tab.route,
+        currentRoute: tab.route,
         onNavigate: _handleDrawerNavigation,
       ),
       body: SafeArea(
@@ -280,18 +335,24 @@ class _AppShellState extends State<AppShell> {
           ],
         ),
       ),
-      floatingActionButton: _buildFab(),
+      floatingActionButton: _buildFab(tab),
       bottomNavigationBar: AVITBottomNavigation(
+        tabs: tabs,
         currentIndex: _currentIndex,
         onTap: _selectTab,
       ),
     );
   }
 
-  String get _tabSubtitle => switch (_tab) {
+  String _subtitleFor(AppTab tab) => switch (tab) {
     AppTab.home => _greetingLabel,
     AppTab.campus => 'Services & facilities',
     AppTab.activities => 'Events, clubs and reminders',
+    AppTab.securityDesk => 'Gate, passes & incidents',
+    AppTab.wardenDesk => 'Hostel approvals & welfare',
+    AppTab.adminDesk => 'Campus-wide control centre',
+    AppTab.announcements => 'Publish campus updates',
+    AppTab.auditLog => 'Security audit trail',
     AppTab.alerts => 'Notifications & emergencies',
     AppTab.profile => 'Your AVIT account',
   };
@@ -303,8 +364,8 @@ class _AppShellState extends State<AppShell> {
     return 'Evening';
   }
 
-  Widget? _buildFab() {
-    switch (_tab) {
+  Widget? _buildFab(AppTab tab) {
+    switch (tab) {
       case AppTab.home:
         return FloatingActionButton(
           tooltip: 'Quick actions',
@@ -338,6 +399,24 @@ class _AppShellState extends State<AppShell> {
           onPressed: _handleFab,
           child: const Icon(Icons.settings_rounded),
         );
+      case AppTab.securityDesk:
+        return FloatingActionButton.extended(
+          tooltip: 'Report incident',
+          onPressed: _handleFab,
+          icon: const Icon(Icons.report_problem_rounded),
+          label: const Text('Incident'),
+        );
+      case AppTab.wardenDesk:
+        return FloatingActionButton.extended(
+          tooltip: 'Complaints',
+          onPressed: _handleFab,
+          icon: const Icon(Icons.support_agent_rounded),
+          label: const Text('Complaints'),
+        );
+      case AppTab.adminDesk:
+      case AppTab.announcements:
+      case AppTab.auditLog:
+        return null;
     }
   }
 }

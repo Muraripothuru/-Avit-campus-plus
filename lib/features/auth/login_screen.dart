@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
+import '../../core/auth/access_policy.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/security/secure_store.dart';
@@ -109,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen>
         tone: AVITSnackTone.success,
       );
       Navigator.of(context).pushNamedAndRemoveUntil(
-        Routes.dashboard,
+        AccessPolicy.homeRouteFor(scope.state.user?.role),
         (Route<dynamic> route) => false,
       );
       return;
@@ -168,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (!mounted) return;
       if (scope.state.isAuthenticated) {
         Navigator.of(context).pushNamedAndRemoveUntil(
-          Routes.dashboard,
+          AccessPolicy.homeRouteFor(scope.state.user?.role),
           (Route<dynamic> route) => false,
         );
         return;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
+import '../../core/auth/access_policy.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
@@ -72,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     final String next = scope.state.isAuthenticated
-        ? Routes.dashboard
+        ? AccessPolicy.homeRouteFor(scope.state.user?.role)
         : Routes.welcome;
     // Clear whatever stack exists so the app always starts from one root.
     Navigator.of(context)

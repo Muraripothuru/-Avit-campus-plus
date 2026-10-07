@@ -15,7 +15,11 @@ import '../../widgets/avit_inputs.dart';
 
 /// Admin composer for campus-wide announcements plus a published log.
 class AnnouncementsScreen extends StatefulWidget {
-  const AnnouncementsScreen({super.key});
+  const AnnouncementsScreen({super.key, this.embedded = false});
+
+  /// When true the shell supplies the scaffold chrome and this screen only
+  /// renders its body.
+  final bool embedded;
 
   @override
   State<AnnouncementsScreen> createState() => _AnnouncementsScreenState();
@@ -49,8 +53,11 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       _error = null;
     });
     try {
-      final List<Announcement> rows =
-          await AppScope.of(context).state.deps.content.announcements();
+      final List<Announcement> rows = await AppScope.of(context)
+          .state
+          .deps
+          .content
+          .announcements();
       if (!mounted) return;
       setState(() {
         _items = rows;
@@ -79,8 +86,11 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       maxLength: 90,
     );
     if (titleError != null) {
-      showAVITSnackBar(context,
-          message: titleError, tone: AVITSnackTone.warning);
+      showAVITSnackBar(
+        context,
+        message: titleError,
+        tone: AVITSnackTone.warning,
+      );
       return;
     }
     final String? bodyError = Validators.safeText(
@@ -90,17 +100,21 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
       maxLength: 600,
     );
     if (bodyError != null) {
-      showAVITSnackBar(context, message: bodyError, tone: AVITSnackTone.warning);
+      showAVITSnackBar(
+        context,
+        message: bodyError,
+        tone: AVITSnackTone.warning,
+      );
       return;
     }
 
     setState(() => _publishing = true);
     try {
       await AppScope.of(context).state.deps.admin.publishAnnouncement(
-            title: _title.text.trim(),
-            body: _body.text.trim(),
-            category: _category,
-          );
+        title: _title.text.trim(),
+        body: _body.text.trim(),
+        category: _category,
+      );
       if (!mounted) return;
       setState(() {
         _publishing = false;
@@ -116,9 +130,11 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _publishing = false);
-      showAVITSnackBar(context,
-          message: 'Publishing failed. Please retry.',
-          tone: AVITSnackTone.error);
+      showAVITSnackBar(
+        context,
+        message: 'Publishing failed. Please retry.',
+        tone: AVITSnackTone.error,
+      );
     }
   }
 
@@ -129,16 +145,20 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     if (_loading) return const LoadingList(itemCount: 5);
     if (_error != null) {
       return Scaffold(
-        appBar: const AVITAppBar(title: 'Announcements'),
+        appBar: widget.embedded
+            ? null
+            : const AVITAppBar(title: 'Announcements'),
         body: AVITErrorState(message: _error!, onRetry: _load),
       );
     }
 
     return Scaffold(
-      appBar: AVITAppBar(
-        title: 'Announcements',
-        subtitle: 'Publish campus updates',
-      ),
+      appBar: widget.embedded
+          ? null
+          : AVITAppBar(
+              title: 'Announcements',
+              subtitle: 'Publish campus updates',
+            ),
       body: AVITRefresh(
         onRefresh: _load,
         child: ListView(
@@ -170,9 +190,8 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                           child: Text(c.label),
                         ),
                     ],
-                    onChanged: (AnnouncementCategory? c) => setState(
-                      () => _category = c ?? _category,
-                    ),
+                    onChanged: (AnnouncementCategory? c) =>
+                        setState(() => _category = c ?? _category),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AVITTextField(

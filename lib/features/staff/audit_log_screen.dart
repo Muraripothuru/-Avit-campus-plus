@@ -13,7 +13,11 @@ import '../../widgets/avit_inputs.dart';
 
 /// Immutable audit trail of every privileged action (admin only).
 class AuditLogScreen extends StatefulWidget {
-  const AuditLogScreen({super.key});
+  const AuditLogScreen({super.key, this.embedded = false});
+
+  /// When true the shell supplies the scaffold chrome and this screen only
+  /// renders its body.
+  final bool embedded;
 
   @override
   State<AuditLogScreen> createState() => _AuditLogScreenState();
@@ -44,8 +48,8 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
       _error = null;
     });
     try {
-      final List<AuditRow> rows =
-          await AppScope.of(context).state.deps.admin.auditLog();
+      final List<AuditRow> rows = await AppScope.of(context).state.deps.admin
+          .auditLog();
       if (!mounted) return;
       setState(() {
         _rows = rows;
@@ -106,16 +110,18 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
     if (_loading) return const LoadingList(itemCount: 8);
     if (_error != null) {
       return Scaffold(
-        appBar: const AVITAppBar(title: 'Audit Log'),
+        appBar: widget.embedded ? null : const AVITAppBar(title: 'Audit Log'),
         body: AVITErrorState(message: _error!, onRetry: _load),
       );
     }
 
     return Scaffold(
-      appBar: AVITAppBar(
-        title: 'Audit Log',
-        subtitle: '${_rows.length} recorded actions',
-      ),
+      appBar: widget.embedded
+          ? null
+          : AVITAppBar(
+              title: 'Audit Log',
+              subtitle: '${_rows.length} recorded actions',
+            ),
       body: AVITRefresh(
         onRefresh: _load,
         child: ListView(

@@ -4,12 +4,18 @@ import '../app/app_scope.dart';
 import '../core/routes/app_routes.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import '../models/user.dart';
 
-/// Section shown on each of the five bottom-navigation tabs.
+/// Section shown on one bottom-navigation tab.
 enum AppTab {
   home('Home', Icons.dashboard_rounded, Routes.dashboard),
   campus('Campus', Icons.location_city_rounded, Routes.campus),
   activities('Activities', Icons.event_note_rounded, Routes.activities),
+  securityDesk('Security', Icons.local_police_rounded, Routes.security),
+  wardenDesk('Warden', Icons.hotel_rounded, Routes.warden),
+  adminDesk('Admin', Icons.admin_panel_settings_rounded, Routes.admin),
+  announcements('Bulletins', Icons.campaign_rounded, Routes.announcements),
+  auditLog('Audit', Icons.history_rounded, Routes.auditLog),
   alerts('Alerts', Icons.notifications_rounded, Routes.alerts),
   profile('Profile', Icons.person_rounded, Routes.profile);
 
@@ -18,15 +24,34 @@ enum AppTab {
   final String label;
   final IconData icon;
   final String route;
+
+  /// Bottom-navigation set for [role]: students get the campus sections,
+  /// staff only ever get their own desk plus shared notifications/profile.
+  static List<AppTab> tabsFor(UserRole role) => switch (role) {
+    UserRole.student => <AppTab>[home, campus, activities, alerts, profile],
+    UserRole.security => <AppTab>[securityDesk, alerts, profile],
+    UserRole.warden => <AppTab>[wardenDesk, alerts, profile],
+    UserRole.admin => <AppTab>[
+      adminDesk,
+      announcements,
+      auditLog,
+      alerts,
+      profile,
+    ],
+  };
 }
 
 /// Customised bottom navigation with an animated selection indicator.
 class AVITBottomNavigation extends StatelessWidget {
   const AVITBottomNavigation({
     super.key,
+    required this.tabs,
     required this.currentIndex,
     required this.onTap,
   });
+
+  /// Role-specific tabs to render, in order.
+  final List<AppTab> tabs;
 
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -62,14 +87,12 @@ class AVITBottomNavigation extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 64),
           child: Row(
             children: <Widget>[
-              for (int i = 0; i < AppTab.values.length; i++)
+              for (int i = 0; i < tabs.length; i++)
                 Expanded(
                   child: _NavTab(
-                    tab: AppTab.values[i],
+                    tab: tabs[i],
                     selected: i == currentIndex,
-                    badge: i == AppTab.values.indexOf(AppTab.alerts)
-                        ? unread
-                        : 0,
+                    badge: i == tabs.indexOf(AppTab.alerts) ? unread : 0,
                     onTap: () => onTap(i),
                   ),
                 ),
