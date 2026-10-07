@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_state.dart';
+import '../../core/auth/access_policy.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -11,6 +12,7 @@ import '../../models/academics.dart';
 import '../../models/announcement.dart';
 import '../../models/campus_event.dart';
 import '../../models/campus_services.dart';
+import '../../models/user.dart';
 import '../../navigation/service_catalog.dart';
 import '../../widgets/avit_app_bar.dart';
 import '../../widgets/avit_cards.dart';
@@ -115,8 +117,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _buildHits() {
     _results.clear();
+    // Only surface destinations this role may actually open.
+    final UserRole role =
+        AppScope.of(context).state.user?.role ?? UserRole.student;
 
     for (final ServiceEntry s in ServiceCatalog.all) {
+      if (!AccessPolicy.allows(role, s.route)) continue;
       if (_has('${s.title} ${s.subtitle}')) {
         _results.add(
           _Hit(
@@ -130,18 +136,20 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     }
 
-    for (final CampusEvent e in _events) {
-      if (_has('${e.title} ${e.organizer} ${e.location}')) {
-        _results.add(
-          _Hit(
-            title: e.title,
-            subtitle:
-                '${Formatters.dayShort.format(e.startsAt)} · ${e.organizer}',
-            icon: Icons.event_rounded,
-            section: 'Events',
-            onOpen: () => Navigator.pushNamed(context, Routes.activities),
-          ),
-        );
+    if (AccessPolicy.allows(role, Routes.activities)) {
+      for (final CampusEvent e in _events) {
+        if (_has('${e.title} ${e.organizer} ${e.location}')) {
+          _results.add(
+            _Hit(
+              title: e.title,
+              subtitle:
+                  '${Formatters.dayShort.format(e.startsAt)} · ${e.organizer}',
+              icon: Icons.event_rounded,
+              section: 'Events',
+              onOpen: () => Navigator.pushNamed(context, Routes.activities),
+            ),
+          );
+        }
       }
     }
 
@@ -159,35 +167,39 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     }
 
-    for (final Course c in _courses) {
-      if (_has('${c.name} ${c.code} ${c.faculty}')) {
-        _results.add(
-          _Hit(
-            title: c.name,
-            subtitle: '${c.code} · ${c.credits} credits',
-            icon: Icons.menu_book_rounded,
-            section: 'Courses',
-            onOpen: () => Navigator.pushNamed(context, Routes.courses),
-          ),
-        );
+    if (AccessPolicy.allows(role, Routes.courses)) {
+      for (final Course c in _courses) {
+        if (_has('${c.name} ${c.code} ${c.faculty}')) {
+          _results.add(
+            _Hit(
+              title: c.name,
+              subtitle: '${c.code} · ${c.credits} credits',
+              icon: Icons.menu_book_rounded,
+              section: 'Courses',
+              onOpen: () => Navigator.pushNamed(context, Routes.courses),
+            ),
+          );
+        }
       }
     }
 
-    for (final CampusLocation p in _places) {
-      if (p.matches(_text.trim())) {
-        _results.add(
-          _Hit(
-            title: p.name,
-            subtitle: p.category,
-            icon: Icons.place_rounded,
-            section: 'Places',
-            onOpen: () => Navigator.pushNamed(
-              context,
-              Routes.campusMap,
-              arguments: p.id,
+    if (AccessPolicy.allows(role, Routes.campusMap)) {
+      for (final CampusLocation p in _places) {
+        if (p.matches(_text.trim())) {
+          _results.add(
+            _Hit(
+              title: p.name,
+              subtitle: p.category,
+              icon: Icons.place_rounded,
+              section: 'Places',
+              onOpen: () => Navigator.pushNamed(
+                context,
+                Routes.campusMap,
+                arguments: p.id,
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -214,9 +226,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
     _buildHits();
     final bool searching = _normalised.isNotEmpty;
+    final UserRole role =
+        AppScope.of(context).state.user?.role ?? UserRole.student;
 
     return Scaffold(
-      appBar: const AVITAppBar(title: 'Search', subtitle: 'Everything on campus'),
+      appBar: const AVITAppBar(
+        title: 'Search',
+        subtitle: 'Everything on campus',
+      ),
       body: ListView(
         padding: AppSpacing.screenPadding,
         children: <Widget>[
@@ -237,22 +254,28 @@ class _SearchScreenState extends State<SearchScreen> {
               runSpacing: AppSpacing.sm,
               children: <Widget>[
                 for (final ServiceEntry s in ServiceCatalog.all)
-                  ActionChip(
-                    avatar: Icon(s.icon, size: 16, color: AppColors.royalBlue),
-                    label: Text(s.title),
-                    onPressed: () => Navigator.pushNamed(context, s.route),
-                    backgroundColor: AppColors.paleBlue,
-                    side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.pillShape,
+                  if (AccessPolicy.allows(role, s.route))
+                    ActionChip(
+                      avatar: Icon(
+                        s.icon,
+                        size: 16,
+                        color: AppColors.royalBlue,
+                      ),
+                      label: Text(s.title),
+                      onPressed: () => Navigator.pushNamed(context, s.route),
+                      backgroundColor: AppColors.paleBlue,
+                      side: const BorderSide(color: AppColors.border),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.pillShape,
+                      ),
                     ),
-                  ),
               ],
             ),
           ] else if (_results.isEmpty) ...<Widget>[
             AVITEmptyState(
               title: 'No matches for “${_text.trim()}”',
-              message: 'Try a shorter word, or check the Campus tab for the '
+              message:
+                  'Try a shorter word, or check the Campus tab for the '
                   'full service catalogue.',
               icon: Icons.search_off_rounded,
             ),
@@ -279,7 +302,11 @@ class _SearchScreenState extends State<SearchScreen> {
                               color: AppColors.lightBlue,
                               borderRadius: AppRadius.small,
                             ),
-                            child: Icon(hit.icon, size: 20, color: AppColors.royalBlue),
+                            child: Icon(
+                              hit.icon,
+                              size: 20,
+                              color: AppColors.royalBlue,
+                            ),
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
