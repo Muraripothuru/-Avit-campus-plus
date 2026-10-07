@@ -1,3 +1,4 @@
+import '../../models/announcement.dart';
 import '../../models/app_notification.dart';
 import '../../models/user.dart';
 import '../routes/app_routes.dart';
@@ -74,6 +75,22 @@ abstract final class AccessPolicy {
               category == NotificationCategory.system,
         _ => true,
       };
+
+  /// Announcement bulletins each role reads on the Alerts tab.
+  ///
+  /// Security keeps only the notices that concern the gate and safety —
+  /// exam timetables, club events, hostel and transport bulletins are
+  /// student traffic, not duty information.
+  static bool seesAnnouncementCategory(
+    UserRole role,
+    AnnouncementCategory category,
+  ) => switch (role) {
+    UserRole.security => switch (category) {
+      AnnouncementCategory.security || AnnouncementCategory.emergency => true,
+      _ => false,
+    },
+    _ => true,
+  };
 
   /// Landing destination after sign-in or a restored session.
   static String homeRouteFor(UserRole? role) => switch (role) {

@@ -84,6 +84,29 @@ abstract final class DemoCatalog {
   // ------------------------------------------------------------ announcements
   static List<Announcement> announcements() => <Announcement>[
     Announcement(
+      id: 'ann_sec_1',
+      title: 'Main Gate restricted entry 10 PM - 5 AM',
+      body:
+          'Overnight entry is allowed only through the Main Gate with a valid '
+          'college ID card. All side gates stay closed during these hours '
+          'until further notice.',
+      category: AnnouncementCategory.security,
+      publishedAt: DateTime.now().subtract(const Duration(hours: 2)),
+      pinned: true,
+      author: 'Security Office',
+    ),
+    Announcement(
+      id: 'ann_sec_2',
+      title: 'Emergency preparedness drill on Friday',
+      body:
+          'A fire and evacuation drill will run across all blocks on Friday '
+          'at 3:30 PM. Follow staff instructions and assemble at the marked '
+          'assembly points.',
+      category: AnnouncementCategory.emergency,
+      publishedAt: DateTime.now().subtract(const Duration(hours: 8)),
+      author: 'Campus Safety Cell',
+    ),
+    Announcement(
       id: 'ann_1',
       title: 'End Semester Examination — Time Table Released',
       body:

@@ -66,7 +66,12 @@ class _AlertsScreenState extends State<AlertsScreen>
                   AccessPolicy.seesAlertCategory(role, n.category),
             )
             .toList(growable: false);
-        _announcements = anns;
+        _announcements = anns
+            .where(
+              (Announcement a) =>
+                  AccessPolicy.seesAnnouncementCategory(role, a.category),
+            )
+            .toList(growable: false);
         _loading = false;
       });
     } on AppException catch (e) {

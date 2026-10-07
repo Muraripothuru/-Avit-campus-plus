@@ -224,6 +224,44 @@ void main() {
       expect(find.text('Transport'), findsNothing);
       expect(find.text('Security'), findsWidgets);
       expect(find.text('System'), findsWidgets);
+
+      // Announcements are duty notices only — no student bulletins. The
+      // section sits below the fold, so scroll it into the viewport first.
+      await tester.scrollUntilVisible(
+        find.text('Main Gate restricted entry 10 PM - 5 AM'),
+        400,
+        scrollable: find
+            .descendant(
+              of: find.byType(AlertsScreen, skipOffstage: false),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await pumpFrames(tester, count: 3);
+
+      expect(
+        find.text('Main Gate restricted entry 10 PM - 5 AM'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Emergency preparedness drill on Friday',
+          skipOffstage: false,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('End Semester Examination', skipOffstage: false),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('Hackathon', skipOffstage: false),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('Hostel Water Maintenance', skipOffstage: false),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     });
 
