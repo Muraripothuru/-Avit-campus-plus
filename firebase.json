@@ -1,0 +1,28 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "avit-campus-plus",
+          "appId": "1:872336765554:android:1c03e1b0dd1a6f6cbc88eb",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "avit-campus-plus",
+          "configurations": {
+            "android": "1:872336765554:android:1c03e1b0dd1a6f6cbc88eb",
+            "web": "1:872336765554:web:c6038fe3c0ed325fbc88eb"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
-import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
@@ -175,7 +176,6 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
 
   GlobalKey<FormState> _detailsKey = GlobalKey<FormState>();
   GlobalKey<FormState> _reviewKey = GlobalKey<FormState>();
-  final Random _random = Random();
 
   /// Bumped on every reset so all fields remount with fresh initial values.
   int _epoch = 0;
@@ -190,6 +190,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   DateTime? _date;
   TimeOfDay? _time;
   String? _attach;
+  Uint8List? _attachBytes;
   bool _agreed = false;
 
   final Map<String, String> _values = <String, String>{};
@@ -203,6 +204,25 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     if (_loaded) return;
     _loaded = true;
     _restoreDraft();
+    _loadRecent();
+  }
+
+  /// Pulls the student's earlier submissions (docx section 24) when the
+  /// Firestore-backed store is active; demo mode keeps the session list.
+  void _loadRecent() {
+    final AppState state = AppScope.of(context).state;
+    state.recentServiceRequests().then((List<Map<String, String>> records) {
+      if (!mounted || records.isEmpty) return;
+      final Set<String> seen = <String>{
+        for (final Map<String, String> r in _recent) r['ref'] ?? '',
+      };
+      final List<Map<String, String>> fresh = records
+          .where((Map<String, String> r) => !seen.contains(r['ref']))
+          .take(5 - _recent.length)
+          .toList();
+      if (fresh.isEmpty) return;
+      setState(() => _recent.insertAll(0, fresh));
+    });
   }
 
   /// Prefills the signed-in student and overlays any locally saved draft.
@@ -296,11 +316,6 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     return '$day • ${Formatters.time.format(withTime)}';
   }
 
-  String get _referenceId {
-    final int n = _random.nextInt(9000) + 1000;
-    return 'SR-${DateTime.now().year}-$n';
-  }
-
   /// Step 1 gate: validate everything first, then run onSaved callbacks so
   /// the review step only ever shows data that passed validation.
   void _continueToReview() {
@@ -347,8 +362,9 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     );
   }
 
-  /// Final gate: validate the declaration, save, then confirm with a
-  /// summary dialog that carries a request reference.
+  /// Final gate: validate the declaration, save, then persist through the
+  /// active store (Firestore in live mode) and confirm with a summary
+  /// dialog that carries the assigned request reference.
   Future<void> _submit() async {
     final FormState? form = _reviewKey.currentState;
     if (form == null || !form.validate()) return;
@@ -356,10 +372,42 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     setState(() => _submitting = true);
     await Future<void>.delayed(const Duration(milliseconds: 450));
     if (!mounted) return;
-    final String ref = _referenceId;
     final String routeLabel = _category == otherCategory
         ? 'Other: ${(_values['other'] ?? '').trim()}'
         : (_category ?? '');
+    final AppState state = AppScope.of(context).state;
+    final Map<String, Object?> payload = <String, Object?>{
+      'studentName': (_values['name'] ?? '').trim(),
+      'studentId': (_values['studentId'] ?? '').trim(),
+      'email': (_values['email'] ?? '').trim(),
+      'phone': (_values['phone'] ?? '').trim(),
+      'category': routeLabel,
+      'subject': (_values['subject'] ?? '').trim(),
+      'description': (_values['details'] ?? '').trim(),
+      'urgency': _urgency ?? '',
+      'preferredContact': _contact ?? '',
+      'preferredDate': _date?.toIso8601String(),
+      'preferredTime': _time == null ? null : '${_time!.hour}:${_time!.minute}',
+      'blockRoom': (_values['block'] ?? '').trim(),
+      'otherDetails': (_values['other'] ?? '').trim(),
+      'attachment': _attach,
+      'declaration': _agreed,
+      if (_attachBytes != null) 'attachmentBytes': _attachBytes,
+    };
+    final String ref;
+    try {
+      ref = await state.submitServiceRequest(payload);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      showAVITSnackBar(
+        context,
+        message: 'Could not reach the campus desk. Check your connection and try again.',
+        tone: AVITSnackTone.error,
+      );
+      return;
+    }
+    if (!mounted) return;
     final Map<String, String> record = <String, String>{
       'ref': ref,
       'subject': (_values['subject'] ?? '').trim(),
@@ -373,7 +421,6 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
       _recent.insert(0, record);
       if (_recent.length > 4) _recent.removeLast();
     });
-    final AppState state = AppScope.of(context).state;
     state.clearServiceRequestDraft();
     _draftRestored = false;
     await _showSummaryDialog(ref);
@@ -457,6 +504,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
       _date = null;
       _time = null;
       _attach = null;
+      _attachBytes = null;
       _draftRestored = false;
       _initials = Map<String, String>.of(_prefill);
       _values
@@ -498,13 +546,48 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     showDialog<void>(
       context: context,
       builder: (BuildContext ctx) => SimpleDialog(
-        title: const Text('Attach a file (demo)'),
+        title: const Text('Attach a file'),
         children: <Widget>[
+          SimpleDialogOption(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                final List<PlatformFile> files = await FilePicker.pickFiles(
+                  type: FileType.any,
+                );
+                if (files.isEmpty || !mounted) return;
+                final PlatformFile file = files.first;
+                final Uint8List bytes = await file.readAsBytes();
+                if (!mounted) return;
+                setState(() {
+                  _attach = file.name;
+                  _attachBytes = bytes;
+                });
+              } catch (_) {
+                if (!mounted) return;
+                showAVITSnackBar(
+                  context,
+                  message: 'Could not read that file. Try another one.',
+                  tone: AVITSnackTone.warning,
+                );
+              }
+            },
+            child: const Row(
+              children: <Widget>[
+                Icon(Icons.upload_file_rounded, size: 18),
+                SizedBox(width: AppSpacing.sm),
+                Text('Choose from your device…'),
+              ],
+            ),
+          ),
           for (final String file in attachments)
             SimpleDialogOption(
               onPressed: () {
                 Navigator.pop(ctx);
-                setState(() => _attach = file);
+                setState(() {
+                  _attach = file;
+                  _attachBytes = null;
+                });
               },
               child: Row(
                 children: <Widget>[
@@ -518,7 +601,10 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
             SimpleDialogOption(
               onPressed: () {
                 Navigator.pop(ctx);
-                setState(() => _attach = null);
+                setState(() {
+                  _attach = null;
+                  _attachBytes = null;
+                });
               },
               child: const Text('Remove attachment'),
             ),
@@ -1155,7 +1241,10 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                               size: 16,
                             ),
                             label: Text(_attach!),
-                            onDeleted: () => setState(() => _attach = null),
+                            onDeleted: () => setState(() {
+                              _attach = null;
+                              _attachBytes = null;
+                            }),
                           ),
                         ),
                       ],

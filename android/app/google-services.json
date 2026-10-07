@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "872336765554",
+    "project_id": "avit-campus-plus",
+    "storage_bucket": "avit-campus-plus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:872336765554:android:1c03e1b0dd1a6f6cbc88eb",
+        "android_client_info": {
+          "package_name": "in.avit.avit_campus_plus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPIA3ooBiEgKC9IyHJcIZY6lTrouxV9ic"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'app/app_scope.dart';
 import 'app/app_state.dart';
 import 'core/constants/app_constants.dart';
 import 'core/routes/app_routes.dart';
+import 'core/services/firebase_bridge.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'features/academics/academic_calendar_screen.dart';
@@ -50,8 +53,13 @@ import 'navigation/app_shell.dart';
 import 'navigation/unknown_route_screen.dart';
 
 /// Composition root and entry point.
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Best-effort backend: a config, network or rules failure must never stop
+  // startup — the app then keeps running on its bundled demo data.
+  await FirebaseBridge.init();
+  unawaited(FirebaseBridge.ensureIdentity());
 
   final AppDependencies deps = AppDependencies();
   final AppState state = AppState(deps);

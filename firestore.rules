@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Campus service requests — document id is the SR reference (docx
+    // sections 19-21). A student only ever sees their own submissions.
+    match /service_requests/{reference} {
+      allow get: if request.auth != null &&
+        (resource == null || resource.data.ownerUid == request.auth.uid);
+      allow list: if request.auth != null &&
+        resource.data.ownerUid == request.auth.uid;
+      allow create: if request.auth != null &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.studentName is string &&
+        request.resource.data.studentName.size() >= 3 &&
+        request.resource.data.studentName.size() <= 100 &&
+        request.resource.data.subject is string &&
+        request.resource.data.subject.size() >= 8 &&
+        request.resource.data.subject.size() <= 100 &&
+        request.resource.data.description is string &&
+        request.resource.data.description.size() >= 20 &&
+        request.resource.data.description.size() <= 500 &&
+        request.resource.data.urgency in ['Low', 'Normal', 'High'] &&
+        request.resource.data.preferredContact in
+          ['Email', 'Phone call', 'In person'];
+      // Submissions are immutable history; only the optional attachment
+      // download URL may be patched on after the upload finishes.
+      allow update: if request.auth != null &&
+        resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(['attachmentUrl']);
+      allow delete: if false;
+    }
+
+    // Student profiles, owned by the signed-in account (section 25).
+    match /users/{userId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+  }
+}

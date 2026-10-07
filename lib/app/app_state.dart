@@ -7,6 +7,7 @@ import '../core/security/audit_log.dart';
 import '../core/security/secure_store.dart';
 import '../core/services/biometric_service.dart';
 import '../core/services/connectivity_service.dart';
+import '../core/services/firebase_bridge.dart';
 import '../core/services/permission_service.dart';
 import '../core/utils/app_exception.dart';
 import '../core/utils/formatters.dart';
@@ -19,6 +20,7 @@ import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/campus_repository.dart';
 import '../../data/repositories/content_repository.dart';
 import '../../data/repositories/gate_pass_repository.dart';
+import '../../data/repositories/service_request_store.dart';
 import '../../data/repositories/staff_repository.dart';
 import '../../data/repositories/visitor_pass_repository.dart';
 
@@ -218,16 +220,17 @@ class AppState extends ChangeNotifier {
   String get displayName => _user?.fullName ?? 'Student';
   String get displayId => _user?.displayId ?? '';
   String get programme => _user?.programme ?? '';
-  String get semesterLabel => _user?.semester == null
-      ? ''
-      : 'Semester ${_user!.semester}';
+  String get semesterLabel =>
+      _user?.semester == null ? '' : 'Semester ${_user!.semester}';
 
   Future<void> bootstrap() async {
     _initialising = true;
     notifyListeners();
     try {
       final String? lastId = await deps.tokens.lastUserId();
-      final bool hasSession = await deps.store.containsKey(SecureKeys.accessToken);
+      final bool hasSession = await deps.store.containsKey(
+        SecureKeys.accessToken,
+      );
       if (hasSession && lastId != null) {
         _user = await _demoUserFor(lastId) ?? _user;
       } else if (deps.isDemoMode) {
@@ -262,14 +265,16 @@ class AppState extends ChangeNotifier {
     required String password,
   }) async {
     return (await _run<bool>(() async {
-      final AuthResult result = await deps.auth.login(
-        identifier: identifier,
-        password: password,
-      );
-      _user = result.user;
-      await deps.store.write(SecureKeys.lastUserId, result.user.id);
-      return true;
-    })) ?? false;
+          final AuthResult result = await deps.auth.login(
+            identifier: identifier,
+            password: password,
+          );
+          _user = result.user;
+          await deps.store.write(SecureKeys.lastUserId, result.user.id);
+          await _linkFirebaseIdentity(password);
+          return true;
+        })) ??
+        false;
   }
 
   Future<bool> signUp({
@@ -282,29 +287,57 @@ class AppState extends ChangeNotifier {
     required String password,
   }) async {
     return (await _run<bool>(() async {
-      final AuthResult result = await deps.auth.completeSignup(
-        fullName: fullName,
-        studentId: studentId,
-        email: email,
-        phone: phone,
-        programme: programme,
-        semester: semester,
-        password: password,
-      );
-      _user = result.user;
-      await deps.store.write(SecureKeys.lastUserId, result.user.id);
-      return true;
-    })) ?? false;
+          final AuthResult result = await deps.auth.completeSignup(
+            fullName: fullName,
+            studentId: studentId,
+            email: email,
+            phone: phone,
+            programme: programme,
+            semester: semester,
+            password: password,
+          );
+          _user = result.user;
+          await deps.store.write(SecureKeys.lastUserId, result.user.id);
+          if (FirebaseBridge.ready) {
+            // Real accounts land in Firebase Auth; unknown demo credentials
+            // simply keep the anonymous identity and the app carries on.
+            await FirebaseBridge.tryEmailSignUp(email, password);
+            await FirebaseBridge.syncProfile(_profileFields);
+          }
+          return true;
+        })) ??
+        false;
   }
 
   Future<bool> signOut({bool everywhere = false}) async {
     await deps.auth.logout(everywhere: everywhere);
+    await FirebaseBridge.trySignOut();
     _user = null;
     _busy = false;
     _lastError = null;
     notifyListeners();
     return true;
   }
+
+  /// Best-effort mirroring of a demo/local session into Firebase email
+  /// password auth plus the `users/{uid}` profile document.
+  Future<void> _linkFirebaseIdentity(String password) async {
+    if (!FirebaseBridge.ready) return;
+    final String email = _user?.email ?? '';
+    if (!email.contains('@')) return;
+    await FirebaseBridge.tryEmailSignIn(email, password);
+    await FirebaseBridge.syncProfile(_profileFields);
+  }
+
+  Map<String, Object?> get _profileFields => <String, Object?>{
+    'fullName': _user?.fullName ?? '',
+    'studentId': _user?.studentId ?? '',
+    'email': _user?.email ?? '',
+    'phone': _user?.phone ?? '',
+    'programme': _user?.programme ?? '',
+    'semester': _user?.semester,
+    'updatedAt': DateTime.now().toIso8601String(),
+  };
 
   Future<void> loadSessionUser() async {
     // In live mode the profile comes from /me; in demo mode we restore from
@@ -323,9 +356,11 @@ class AppState extends ChangeNotifier {
   Future<bool> updateProfile(AppUser updated) async {
     if (_user == null) return false;
     return (await _run<bool>(() async {
-      _user = await deps.auth.updateProfile(updated);
-      return true;
-    })) ?? false;
+          _user = await deps.auth.updateProfile(updated);
+          await FirebaseBridge.syncProfile(_profileFields);
+          return true;
+        })) ??
+        false;
   }
 
   Future<bool> setBiometric(bool enabled) async {
@@ -336,10 +371,7 @@ class AppState extends ChangeNotifier {
       if (!ok) return false;
     }
     _biometricOptIn = enabled;
-    await deps.store.write(
-      SecureKeys.biometricConsent,
-      enabled ? '1' : '0',
-    );
+    await deps.store.write(SecureKeys.biometricConsent, enabled ? '1' : '0');
     _user = _user?.copyWith(biometricEnabled: enabled);
     notifyListeners();
     return true;
@@ -365,6 +397,20 @@ class AppState extends ChangeNotifier {
     _serviceRequestDraft = null;
     notifyListeners();
   }
+
+  /// Firestore in live mode, the in-memory demo store otherwise — tests
+  /// never initialise Firebase so they keep exercising demo behaviour.
+  ServiceRequestStore get _serviceRequests => FirebaseBridge.ready
+      ? FirebaseServiceRequestStore()
+      : DemoServiceRequestStore();
+
+  /// Submits a campus service request and returns its SR reference.
+  Future<String> submitServiceRequest(Map<String, Object?> data) =>
+      _serviceRequests.submit(data);
+
+  /// Most recent requests for the signed-in student (empty in demo mode).
+  Future<List<Map<String, String>>> recentServiceRequests() =>
+      _serviceRequests.recent();
 
   void toggleEventFavourite(String eventId) {
     // Demonstrates setState-style local state via the shared notifier.
