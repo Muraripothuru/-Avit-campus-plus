@@ -15,8 +15,10 @@ import '../../widgets/avit_cards.dart';
 import '../../widgets/avit_content_cards.dart';
 import '../../widgets/avit_feedback.dart';
 import '../../widgets/avit_inputs.dart';
+import '../../widgets/student_profile_sheet.dart';
 
-/// Gate pass requests: create → review status → signed QR at the gate.
+/// Gate pass requests: students create and track passes with their signed
+/// QR; wardens get the approval inbox for the same lifecycle.
 class GatePassScreen extends StatefulWidget {
   const GatePassScreen({super.key});
 
@@ -29,6 +31,7 @@ class _GatePassScreenState extends State<GatePassScreen> {
   String? _error;
   List<GatePass> _passes = <GatePass>[];
   String _filter = 'All';
+  String? _busyId;
 
   static const List<String> _filters = <String>[
     'All',
@@ -45,15 +48,18 @@ class _GatePassScreenState extends State<GatePassScreen> {
 
   Future<void> _load() async {
     final AppDependencies deps = AppScope.of(context).state.deps;
+    final AppUser? me = AppScope.of(context).state.user;
+    final bool asWarden = me?.role == UserRole.warden;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final AppUser? me = AppScope.of(context).state.user;
-      final List<GatePass> rows = await deps.gatePasses.myPasses(
-        me?.studentId ?? '',
-      );
+      // Warden: the section is the approval inbox — pending requests only.
+      // Students: their own pass history (create → approve → QR → use).
+      final List<GatePass> rows = asWarden
+          ? await deps.gatePasses.pendingReview()
+          : await deps.gatePasses.myPasses(me?.studentId ?? '');
       if (!mounted) return;
       setState(() {
         _passes = rows;
@@ -68,7 +74,9 @@ class _GatePassScreenState extends State<GatePassScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Unable to load your gate passes';
+        _error = asWarden
+            ? 'Unable to load approval requests'
+            : 'Unable to load your gate passes';
         _loading = false;
       });
     }
@@ -83,8 +91,109 @@ class _GatePassScreenState extends State<GatePassScreen> {
     _ => _passes,
   };
 
+  /// Warden decision on a pending request: approval issues the student's
+  /// signed gate QR, and the card leaves the inbox once reviewed.
+  Future<void> _decide(GatePass pass, {required bool approve}) async {
+    final AppState state = AppScope.of(context).state;
+    final String reviewer = state.user?.fullName ?? 'Warden';
+    setState(() => _busyId = pass.id);
+    try {
+      await state.deps.gatePasses.decide(
+        passId: pass.id,
+        approve: approve,
+        reviewer: reviewer,
+        comment: approve ? 'Approved by warden' : 'Not permitted at this time',
+      );
+      if (!mounted) return;
+      setState(() => _busyId = null);
+      showAVITSnackBar(
+        context,
+        message: approve
+            ? 'Request approved — QR issued to the student'
+            : 'Request declined',
+        tone: approve ? AVITSnackTone.success : AVITSnackTone.warning,
+      );
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _busyId = null);
+      showAVITSnackBar(
+        context,
+        message: 'Could not update the request',
+        tone: AVITSnackTone.error,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (AppScope.of(context).state.user?.role == UserRole.warden) {
+      return _buildWarden(context);
+    }
+    return _buildStudent(context);
+  }
+
+  /// Warden view: approvals only — no create button, filters or pass history.
+  Widget _buildWarden(BuildContext context) {
+    final int pending = _passes.length;
+    return Scaffold(
+      appBar: AVITAppBar(
+        title: 'Gate Pass',
+        subtitle: _loading
+            ? null
+            : '$pending pending approval${pending == 1 ? '' : 's'}',
+      ),
+      body: _loading
+          ? const LoadingList(itemCount: 4)
+          : _error != null
+          ? AVITErrorState(message: _error!, onRetry: _load)
+          : AVITRefresh(
+              onRefresh: _load,
+              child: ListView(
+                padding: AppSpacing.screenPadding,
+                children: <Widget>[
+                  AVITStatusChip(
+                    label: 'Students see their QR the moment you approve',
+                    tone: AVITStatusTone.info,
+                    icon: Icons.qr_code_scanner_rounded,
+                    compact: true,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AVITSectionHeader(
+                    title: 'Pending requests',
+                    subtitle: 'Approve or decline student leave',
+                  ),
+                  if (_passes.isEmpty)
+                    const AVITEmptyState(
+                      title: 'Inbox clear',
+                      message: 'No pending gate pass requests.',
+                      icon: Icons.inbox_rounded,
+                    )
+                  else
+                    for (final GatePass pass in _passes)
+                      AVITApprovalCard(
+                        title: pass.studentName,
+                        meta: '${pass.studentId} • ${pass.destination}',
+                        reason: pass.reason,
+                        window:
+                            '${Formatters.monthDay.format(pass.outAt)} '
+                            '${Formatters.time.format(pass.outAt)} – '
+                            '${Formatters.time.format(pass.inBy)}',
+                        busy: _busyId == pass.id,
+                        onApprove: () => _decide(pass, approve: true),
+                        onReject: () => _decide(pass, approve: false),
+                        onOpen: () =>
+                            showStudentProfileSheet(context, pass.studentId),
+                      ),
+                  const SizedBox(height: 88),
+                ],
+              ),
+            ),
+    );
+  }
+
+  /// Student view: own requests, status filters and the create button.
+  Widget _buildStudent(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
 
     return Scaffold(

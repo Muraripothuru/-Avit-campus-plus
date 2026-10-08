@@ -8,11 +8,11 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/snackbar.dart';
 import '../../models/pass.dart';
 import '../../models/safety.dart';
-import '../../models/user.dart';
 import '../../widgets/avit_app_bar.dart';
 import '../../widgets/avit_cards.dart';
+import '../../widgets/avit_content_cards.dart';
 import '../../widgets/avit_feedback.dart';
-import '../../widgets/avit_inputs.dart';
+import '../../widgets/student_profile_sheet.dart';
 
 /// Warden console: approve gate/visitor requests and track hostel matters.
 class WardenDashboardScreen extends StatefulWidget {
@@ -48,8 +48,14 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
       _error = null;
     });
     try {
-      final List<GatePass> gates = await deps.warden.gatePassRequests();
-      final List<VisitorPass> visitors = await deps.warden.visitorRequests();
+      // The console is an approval inbox â€” only requests awaiting a decision
+      // belong here (already-reviewed rows live on their own screens).
+      final List<GatePass> gates = (await deps.warden.gatePassRequests())
+          .where((GatePass p) => p.status == PassStatus.pending)
+          .toList();
+      final List<VisitorPass> visitors = (await deps.warden.visitorRequests())
+          .where((VisitorPass v) => v.status == PassStatus.pending)
+          .toList();
       final List<Complaint> complaints = await deps.warden.hostelComplaints();
       final List<GateMovement> late = await deps.warden.lateReturns();
       if (!mounted) return;
@@ -112,87 +118,6 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
         tone: AVITSnackTone.error,
       );
     }
-  }
-
-  Future<void> _showStudent(String studentId) async {
-    final AppUser? profile = await AppScope.of(context).state.deps.warden
-        .studentProfile(studentId);
-    if (!mounted) return;
-    final TextTheme text = Theme.of(context).textTheme;
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (BuildContext ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.xl,
-        ),
-        child: profile == null
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    'No profile found for $studentId',
-                    style: text.titleSmall,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  AVITButton(
-                    label: 'Close',
-                    variant: AVITButtonVariant.secondary,
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(profile.fullName, style: text.titleLarge),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${profile.displayId} • ${profile.programmeShort}',
-                    style: text.bodySmall,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    children: <Widget>[
-                      AVITStatusChip(
-                        label: profile.hostel == null || profile.hostel!.isEmpty
-                            ? 'Day scholar'
-                            : profile.hostel!,
-                        tone: AVITStatusTone.brand,
-                        icon: Icons.apartment_rounded,
-                        compact: true,
-                      ),
-                      AVITStatusChip(
-                        label: 'Sem ${profile.semester ?? '—'}',
-                        tone: AVITStatusTone.info,
-                        compact: true,
-                      ),
-                      if (profile.phone.isNotEmpty)
-                        AVITStatusChip(
-                          label: profile.phone,
-                          tone: AVITStatusTone.neutral,
-                          icon: Icons.phone_rounded,
-                          compact: true,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  AVITButton(
-                    label: 'Done',
-                    variant: AVITButtonVariant.secondary,
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-      ),
-    );
   }
 
   @override
@@ -267,7 +192,7 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
             AVITSectionHeader(
               title: 'Gate pass requests',
               subtitle: 'Approve or decline student leave',
-              actionLabel: 'All passes',
+              actionLabel: 'Review',
               onAction: () => Navigator.pushNamed(context, Routes.gatePass),
             ),
             if (_gateRequests.isEmpty)
@@ -278,20 +203,21 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
               )
             else
               for (final GatePass pass in _gateRequests)
-                _ApprovalCard(
+                AVITApprovalCard(
                   title: pass.studentName,
-                  meta: '${pass.studentId} • ${pass.destination}',
+                  meta: '${pass.studentId} â€¢ ${pass.destination}',
                   reason: pass.reason,
                   window:
                       '${Formatters.monthDay.format(pass.outAt)} '
-                      '${Formatters.time.format(pass.outAt)} – '
+                      '${Formatters.time.format(pass.outAt)} â€“ '
                       '${Formatters.time.format(pass.inBy)}',
                   busy: _busyId == pass.id,
                   onApprove: () =>
                       _decide(id: pass.id, approve: true, gate: true),
                   onReject: () =>
                       _decide(id: pass.id, approve: false, gate: true),
-                  onOpen: () => _showStudent(pass.studentId),
+                  onOpen: () =>
+                      showStudentProfileSheet(context, pass.studentId),
                 ),
             const SizedBox(height: AppSpacing.lg),
             AVITSectionHeader(
@@ -308,19 +234,20 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
               )
             else
               for (final VisitorPass pass in _visitorRequests)
-                _ApprovalCard(
+                AVITApprovalCard(
                   title: pass.visitorName,
-                  meta: '${pass.idType} • hosted by ${pass.hostStudentName}',
+                  meta: '${pass.idType} â€¢ hosted by ${pass.hostStudentName}',
                   reason: pass.purpose,
                   window:
-                      '${Formatters.monthDay.format(pass.visitDate)} • '
+                      '${Formatters.monthDay.format(pass.visitDate)} â€¢ '
                       '${pass.visitorPhone}',
                   busy: _busyId == pass.id,
                   onApprove: () =>
                       _decide(id: pass.id, approve: true, gate: false),
                   onReject: () =>
                       _decide(id: pass.id, approve: false, gate: false),
-                  onOpen: () => _showStudent(pass.hostStudentId),
+                  onOpen: () =>
+                      showStudentProfileSheet(context, pass.hostStudentId),
                 ),
             const SizedBox(height: AppSpacing.lg),
             AVITSectionHeader(
@@ -347,7 +274,7 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
                           style: text.titleSmall,
                         ),
                         subtitle: Text(
-                          '${_lateReturns[i].personId} • due back by '
+                          '${_lateReturns[i].personId} â€¢ due back by '
                           '${Formatters.time.format(_lateReturns[i].time)}',
                           style: text.labelSmall,
                         ),
@@ -356,7 +283,10 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
                           tone: AVITStatusTone.warning,
                           compact: true,
                         ),
-                        onTap: () => _showStudent(_lateReturns[i].personId),
+                        onTap: () => showStudentProfileSheet(
+                          context,
+                          _lateReturns[i].personId,
+                        ),
                       ),
                     ],
                   ],
@@ -399,7 +329,7 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${c.category} • ${c.raisedBy} • '
+                          '${c.category} â€¢ ${c.raisedBy} â€¢ '
                           '${Formatters.monthDay.format(c.createdAt)}',
                           style: text.labelSmall,
                         ),
@@ -410,85 +340,6 @@ class _WardenDashboardScreenState extends State<WardenDashboardScreen> {
                   ),
                 ),
             const SizedBox(height: 80),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ApprovalCard extends StatelessWidget {
-  const _ApprovalCard({
-    required this.title,
-    required this.meta,
-    required this.reason,
-    required this.window,
-    required this.busy,
-    required this.onApprove,
-    required this.onReject,
-    required this.onOpen,
-  });
-
-  final String title;
-  final String meta;
-  final String reason;
-  final String window;
-  final bool busy;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final TextTheme text = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: AVITCard(
-        onTap: onOpen,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(child: Text(title, style: text.titleSmall)),
-                AVITStatusChip(
-                  label: 'Pending',
-                  tone: AVITStatusTone.warning,
-                  compact: true,
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(meta, style: text.labelSmall),
-            const SizedBox(height: AppSpacing.xs),
-            Text(reason, style: text.bodySmall),
-            const SizedBox(height: 4),
-            Text(window, style: text.labelSmall),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: AVITButton(
-                    label: 'Approve',
-                    compact: true,
-                    expand: false,
-                    variant: AVITButtonVariant.success,
-                    loading: busy,
-                    onPressed: busy ? null : onApprove,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: AVITButton(
-                    label: 'Decline',
-                    compact: true,
-                    expand: false,
-                    variant: AVITButtonVariant.ghost,
-                    onPressed: busy ? null : onReject,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),

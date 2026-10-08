@@ -7,6 +7,7 @@ import '../core/utils/formatters.dart';
 import '../models/announcement.dart';
 import '../models/campus_event.dart';
 import 'avit_cards.dart';
+import 'avit_inputs.dart';
 import 'avit_motion.dart';
 
 /// Interactive service tile used on the dashboard and Campus tab.
@@ -650,6 +651,88 @@ class AVITQrPanel extends StatelessWidget {
             style: text.bodySmall?.copyWith(fontFamily: 'monospace'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Approval row used wherever staff review requests (warden console and the
+/// gate pass approval inbox): identity, reason, window, Approve/Decline.
+class AVITApprovalCard extends StatelessWidget {
+  const AVITApprovalCard({
+    super.key,
+    required this.title,
+    required this.meta,
+    required this.reason,
+    required this.window,
+    required this.busy,
+    required this.onApprove,
+    required this.onReject,
+    required this.onOpen,
+  });
+
+  final String title;
+  final String meta;
+  final String reason;
+  final String window;
+  final bool busy;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AVITCard(
+        onTap: onOpen,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(child: Text(title, style: text.titleSmall)),
+                AVITStatusChip(
+                  label: 'Pending',
+                  tone: AVITStatusTone.warning,
+                  compact: true,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(meta, style: text.labelSmall),
+            const SizedBox(height: AppSpacing.xs),
+            Text(reason, style: text.bodySmall),
+            const SizedBox(height: 4),
+            Text(window, style: text.labelSmall),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: AVITButton(
+                    label: 'Approve',
+                    compact: true,
+                    expand: false,
+                    variant: AVITButtonVariant.success,
+                    loading: busy,
+                    onPressed: busy ? null : onApprove,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: AVITButton(
+                    label: 'Decline',
+                    compact: true,
+                    expand: false,
+                    variant: AVITButtonVariant.ghost,
+                    onPressed: busy ? null : onReject,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
