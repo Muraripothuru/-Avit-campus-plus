@@ -89,9 +89,27 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
+    final String identifier = _identifier.text.trim();
+
+    // College-only gate: emails outside the institution never reach the
+    // credential check — the popup is the barrier for every portal.
+    if (identifier.contains('@') &&
+        !identifier.toLowerCase().endsWith(
+          '@${AppConstants.institutionalEmailDomain}',
+        )) {
+      _shake.forward(from: 0);
+      _showCredentialDialog(
+        title: 'Check your email',
+        message:
+            'This portal only accepts college emails ending in '
+            '@${AppConstants.institutionalEmailDomain}. '
+            'Use your college email or your student ID instead.',
+      );
+      return;
+    }
+
     setState(() => _loading = true);
     final AppScope scope = AppScope.of(context);
-    final String identifier = _identifier.text.trim();
     final bool ok = await scope.state.signIn(
       identifier: identifier,
       password: _password.text,
@@ -118,14 +136,49 @@ class _LoginScreenState extends State<LoginScreen>
 
     setState(() => _failedAttempts++);
     _shake.forward(from: 0);
-    showAVITSnackBar(
-      context,
-      message: scope.state.lastError ?? 'Incorrect ID or password',
-      tone: AVITSnackTone.error,
-    );
-    if (_failedAttempts >= AppConstants.maxLoginAttempts) {
+    final String? error = scope.state.lastError;
+    if (_failedAttempts >= AppConstants.maxLoginAttempts ||
+        (error?.contains('Too many attempts') ?? false)) {
       _showLockoutNotice();
+      return;
     }
+    final int left = AppConstants.maxLoginAttempts - _failedAttempts;
+    _showCredentialDialog(
+      title: 'Check your email or password',
+      message: (error == null || error == 'Incorrect ID or password')
+          ? 'Check your registered college email or student ID and password, '
+                'then try again. $left attempt${left == 1 ? '' : 's'} left '
+                'before sign-in is paused.'
+          : error,
+    );
+  }
+
+  /// Blocking popup shown whenever sign-in is refused: wrong credentials on
+  /// any portal, or an email outside the college domain.
+  void _showCredentialDialog({required String title, required String message}) {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Text(title),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushNamed(context, Routes.forgotPassword);
+            },
+            child: const Text('Reset password'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showLockoutNotice() {

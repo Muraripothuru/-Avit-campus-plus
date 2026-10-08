@@ -33,11 +33,16 @@ abstract final class Validators {
   }
 
   /// Accepts either an institutional email or a student ID.
+  ///
+  /// Format only: the email *domain* gate (`@avit.ac.in`) lives on the login
+  /// screen so a wrong domain raises the blocking popup. Student IDs are kept
+  /// deliberately loose (numbers, letters, 3–32 chars) and are verified
+  /// against the account store instead of a rigid pattern.
   static String? userIdOrEmail(String? value) {
     final String v = (value ?? '').trim();
     if (v.isEmpty) return 'Student ID or email is required';
     if (v.contains('@')) return email(v);
-    if (!_studentId.hasMatch(v.toUpperCase())) {
+    if (!RegExp(r'^[A-Za-z0-9._-]{3,32}$').hasMatch(v)) {
       return 'Enter a valid student ID or email';
     }
     return null;
