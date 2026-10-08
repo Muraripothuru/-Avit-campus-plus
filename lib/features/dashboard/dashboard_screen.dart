@@ -117,7 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: ListView(
         padding: AppSpacing.screenPadding,
         children: <Widget>[
-          _GreetingHeader(user: user),
+          _GreetingHeader(user: user, onSignOut: _signOut),
           _AcademicSnapshot(
             semester: user?.semester,
             attendance: _attendance,
@@ -318,12 +318,58 @@ class _DashboardScreenState extends State<DashboardScreen>
       );
     }
   }
+
+  Future<void> _signOut() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: const Text('Sign out?'),
+        content: const Text(
+          'You will need your ID and password to sign back in.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await AppScope.of(context).state.signOut();
+      if (!mounted) return;
+      showAVITSnackBar(
+        context,
+        message: 'Signed out successfully',
+        tone: AVITSnackTone.success,
+      );
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(Routes.login, (Route<dynamic> route) => false);
+    } catch (_) {
+      if (!mounted) return;
+      showAVITSnackBar(
+        context,
+        message: 'Could not sign out — please try again',
+        tone: AVITSnackTone.error,
+      );
+    }
+  }
 }
 
 class _GreetingHeader extends StatelessWidget {
-  const _GreetingHeader({required this.user});
+  const _GreetingHeader({required this.user, required this.onSignOut});
 
   final AppUser? user;
+  final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -550,6 +596,39 @@ class _GreetingHeader extends StatelessWidget {
                                     ),
                                   ),
                                 ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Material(
+                              color: AppColors.white,
+                              borderRadius: AppRadius.pillShape,
+                              child: InkWell(
+                                borderRadius: AppRadius.pillShape,
+                                onTap: onSignOut,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      const Icon(
+                                        Icons.logout_rounded,
+                                        size: 14,
+                                        color: AppColors.danger,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        'Sign out',
+                                        style: text.labelMedium?.copyWith(
+                                          color: AppColors.navy,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ],
