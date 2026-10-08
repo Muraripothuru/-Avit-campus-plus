@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_exception.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/sign_out.dart';
 import '../../core/utils/snackbar.dart';
 import '../../models/academics.dart';
 import '../../models/announcement.dart';
@@ -319,50 +320,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
-  Future<void> _signOut() async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: const Text('Sign out?'),
-        content: const Text(
-          'You will need your ID and password to sign back in.',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sign out'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    try {
-      await AppScope.of(context).state.signOut();
-      if (!mounted) return;
-      showAVITSnackBar(
-        context,
-        message: 'Signed out successfully',
-        tone: AVITSnackTone.success,
-      );
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(Routes.login, (Route<dynamic> route) => false);
-    } catch (_) {
-      if (!mounted) return;
-      showAVITSnackBar(
-        context,
-        message: 'Could not sign out — please try again',
-        tone: AVITSnackTone.error,
-      );
-    }
-  }
+  Future<void> _signOut() => confirmSignOut(context);
 }
 
 class _GreetingHeader extends StatelessWidget {

@@ -6,6 +6,7 @@ import '../core/routes/app_routes.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import '../core/utils/sign_out.dart';
 import '../core/utils/snackbar.dart';
 import '../features/activities/activities_screen.dart';
 import '../features/alerts/alerts_screen.dart';
@@ -277,6 +278,11 @@ class _AppShellState extends State<AppShell> {
             icon: Icons.notifications_rounded,
             count: unread,
             onPressed: () => _selectTab(tabs.indexOf(AppTab.alerts)),
+          ),
+          IconButton(
+            tooltip: 'Sign out',
+            onPressed: () => confirmSignOut(context),
+            icon: const Icon(Icons.logout_rounded),
           ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),

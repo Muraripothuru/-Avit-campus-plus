@@ -5,6 +5,7 @@ import '../core/auth/access_policy.dart';
 import '../core/routes/app_routes.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import '../core/utils/sign_out.dart';
 import '../models/user.dart';
 import 'avit_avatar.dart';
 
@@ -185,6 +186,31 @@ class AVITDrawer extends StatelessWidget {
                   ),
               ],
             ],
+            const SizedBox(height: AppSpacing.md),
+            const Divider(indent: AppSpacing.lg, endIndent: AppSpacing.lg),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 2,
+              ),
+              child: Material(
+                type: MaterialType.transparency,
+                child: ListTile(
+                  dense: true,
+                  leading: const Icon(
+                    Icons.logout_rounded,
+                    size: 21,
+                    color: AppColors.danger,
+                  ),
+                  title: Text(
+                    'Sign out',
+                    style: Theme.of(context).textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () => confirmSignOut(context),
+                ),
+              ),
+            ),
             const SizedBox(height: AppSpacing.md),
           ],
         ),
