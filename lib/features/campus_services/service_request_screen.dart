@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_state.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
@@ -198,6 +199,27 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   final List<Map<String, String>> _recent = <Map<String, String>>[];
   bool _loaded = false;
 
+  /// Drives the support-card jump back to the top of the form.
+  final ScrollController _scroll = ScrollController();
+
+  /// Anchors the "Your recent requests" section so the Request Status
+  /// card can scroll straight to it.
+  final GlobalKey _recordsKey = GlobalKey();
+
+  /// Session history cap — matches the store's default page size.
+  static const int _recentCap = 20;
+
+  /// Live filter over the submitted-records list.
+  final TextEditingController _recordSearch = TextEditingController();
+  String _recordsQuery = '';
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    _recordSearch.dispose();
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -218,7 +240,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
       };
       final List<Map<String, String>> fresh = records
           .where((Map<String, String> r) => !seen.contains(r['ref']))
-          .take(5 - _recent.length)
+          .take(_recentCap - _recent.length)
           .toList();
       if (fresh.isEmpty) return;
       setState(() => _recent.insertAll(0, fresh));
@@ -413,13 +435,15 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
       'subject': (_values['subject'] ?? '').trim(),
       'category': routeLabel,
       'urgency': _urgency ?? '',
+      'name': (_values['name'] ?? '').trim(),
+      'studentId': (_values['studentId'] ?? '').trim(),
     };
     setState(() {
       _submitting = false;
       _submitted = true;
       _reference = ref;
       _recent.insert(0, record);
-      if (_recent.length > 4) _recent.removeLast();
+      if (_recent.length > _recentCap) _recent.removeLast();
     });
     state.clearServiceRequestDraft();
     _draftRestored = false;
@@ -622,6 +646,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
         subtitle: 'Campus support desk',
       ),
       body: ListView(
+        controller: _scroll,
         padding: AppSpacing.screenPadding,
         children: <Widget>[
           _buildIntro(text),
@@ -661,7 +686,8 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                     child: _buildReviewStep(text),
                   ),
           ),
-          if (_recent.isNotEmpty && !_submitted) _buildRecent(text),
+          if (_recent.isNotEmpty)
+            KeyedSubtree(key: _recordsKey, child: _buildRecent(text)),
           // Hidden while reviewing so the step keeps its compact scroll range.
           if (_step == 0 || _submitted) ...<Widget>[
             const SizedBox(height: AppSpacing.lg),
@@ -708,6 +734,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                     icon: Icons.bolt_rounded,
                     title: 'Quick Help',
                     body: 'Find the right campus service quickly.',
+                    onTap: () => Navigator.pushNamed(context, Routes.help),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -716,6 +743,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                     icon: Icons.troubleshoot_rounded,
                     title: 'Common Issues',
                     body: 'Wi-Fi, ID card, dormitory, documents and more.',
+                    onTap: _showCommonIssues,
                   ),
                 ),
               ],
@@ -732,6 +760,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                     title: 'Request Status',
                     body: 'Check your latest submitted request.',
                     status: status,
+                    onTap: _showRequestStatus,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -740,6 +769,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                     icon: Icons.post_add_rounded,
                     title: 'Service Request',
                     body: 'Submit an issue online in a few steps.',
+                    onTap: _jumpToForm,
                   ),
                 ),
               ],
@@ -748,6 +778,244 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
         ],
       ),
     );
+  }
+
+  /// Pops the form back to the details step and scrolls to the top. After
+  /// a submission the success view is replaced by a fresh form.
+  void _jumpToForm() {
+    if (_submitted) {
+      _resetAll();
+      return;
+    }
+    setState(() => _step = 0);
+    _scrollToTop();
+  }
+
+  void _scrollToTop() {
+    if (!_scroll.hasClients) return;
+    _scroll.animateTo(
+      0,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  /// Quick picker for the popular issue categories: sets the form's
+  /// category and jumps back to the details step in one tap.
+  void _showCommonIssues() {
+    const List<({IconData icon, String category})> issues =
+        <({IconData icon, String category})>[
+          (icon: Icons.wifi_rounded, category: 'Wi-Fi / Internet'),
+          (icon: Icons.badge_rounded, category: 'Lost Student ID Card'),
+          (icon: Icons.bed_rounded, category: 'Dormitory Issue'),
+          (icon: Icons.description_rounded, category: 'Academic Documents'),
+          (icon: Icons.credit_card_rounded, category: 'Payment Question'),
+          (icon: Icons.computer_rounded, category: 'Student Account / Login'),
+          (icon: Icons.menu_book_rounded, category: 'Library Access'),
+          (icon: Icons.handyman_rounded, category: 'Campus Facilities'),
+        ];
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (BuildContext ctx) {
+        final TextTheme text = Theme.of(ctx).textTheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.xl,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.7,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text('Common issues', style: text.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Pick what matches your problem — we set the category '
+                      'and take you to the form.',
+                      style: text.bodySmall,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    for (final ({IconData icon, String category}) issue
+                        in issues)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(issue.icon, color: AppColors.royalBlue),
+                        title: Text(issue.category, style: text.titleSmall),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _jumpToForm();
+                          setState(() => _category = issue.category);
+                          showAVITSnackBar(
+                            context,
+                            message:
+                                'Category set to ${issue.category} — '
+                                'describe the problem and submit.',
+                            tone: AVITSnackTone.success,
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Shows the newest request the student submitted this session (or an
+  /// empty state with a shortcut back to the form).
+  void _showRequestStatus() {
+    final Map<String, String>? latest = _recent.isEmpty ? null : _recent.first;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (BuildContext ctx) {
+        final TextTheme text = Theme.of(ctx).textTheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.xl,
+            ),
+            child: latest == null
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Icon(
+                        Icons.inbox_rounded,
+                        size: 40,
+                        color: AppColors.royalBlue,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text('No request submitted yet', style: text.titleSmall),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Start a service request and its status will show '
+                        'up here.',
+                        textAlign: TextAlign.center,
+                        style: text.bodySmall,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      AVITButton(
+                        label: 'Start a request',
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _jumpToForm();
+                        },
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('Latest request', style: text.titleLarge),
+                      const SizedBox(height: AppSpacing.md),
+                      AVITCard(
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    latest['subject'] ?? 'Request',
+                                    style: text.titleSmall,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${latest['category']} • '
+                                    '${latest['urgency']} urgency',
+                                    style: text.labelSmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            AVITStatusChip(
+                              label: latest['ref'] ?? '',
+                              tone: AVITStatusTone.success,
+                              compact: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Submitted — the ${latest['category']} team has '
+                        'it queued and will reply on your preferred channel.',
+                        style: text.bodySmall,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: AVITButton(
+                              label: 'View all requests',
+                              variant: AVITButtonVariant.secondary,
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                _scrollToRecords();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: AVITButton(
+                              label: 'Close',
+                              variant: AVITButtonVariant.ghost,
+                              onPressed: () => Navigator.pop(ctx),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Closes any sheet, then scrolls the records list into view.
+  void _scrollToRecords() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final BuildContext? ctx = _recordsKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 360),
+          curve: Curves.easeOutCubic,
+          alignment: 0.05,
+        );
+      } else {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 360),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
   }
 
   Widget _buildIntro(TextTheme text) => AVITFadeUp(
@@ -1615,7 +1883,29 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     onDone: _resetAll,
   );
 
+  /// Records matching the live search query, newest first. Matches against
+  /// reference, subject, service category, urgency, student name and ID.
+  List<Map<String, String>> get _filteredRecent {
+    final String q = _recordsQuery.trim().toLowerCase();
+    if (q.isEmpty) return _recent;
+    return _recent.where((Map<String, String> r) {
+      return <String>[
+        r['ref'] ?? '',
+        r['subject'] ?? '',
+        r['category'] ?? '',
+        r['urgency'] ?? '',
+        r['name'] ?? '',
+        r['studentId'] ?? '',
+      ].any((String field) => field.toLowerCase().contains(q));
+    }).toList();
+  }
+
+  void _onRecordSearchChanged(String value) => setState(() {
+    _recordsQuery = value;
+  });
+
   Widget _buildRecent(TextTheme text) {
+    final List<Map<String, String>> records = _filteredRecent;
     return AVITFadeUp(
       delay: const Duration(milliseconds: 120),
       child: Column(
@@ -1624,41 +1914,85 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
           const SizedBox(height: AppSpacing.lg),
           AVITSectionHeader(
             title: 'Your recent requests',
-            subtitle: '${_recent.length} submitted this session',
+            subtitle: _recordsQuery.trim().isEmpty
+                ? '${_recent.length} submitted this session'
+                : '${records.length} of ${_recent.length} match '
+                      '"${_recordsQuery.trim()}"',
           ),
-          for (final Map<String, String> r in _recent)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: AVITCard(
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            r['subject'] ?? '',
-                            style: text.titleSmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${r['category']} • ${r['urgency']} urgency',
-                            style: text.labelSmall,
-                          ),
-                        ],
+          const SizedBox(height: AppSpacing.sm),
+          AVITSearchField(
+            controller: _recordSearch,
+            hint: 'Search by name, ID, service, subject or reference',
+            onChanged: _onRecordSearchChanged,
+            onClear: () => setState(() => _recordsQuery = ''),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (records.isEmpty)
+            AVITCard(
+              child: Row(
+                children: <Widget>[
+                  const Icon(
+                    Icons.search_off_rounded,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'No requests match "${_recordsQuery.trim()}"',
+                      style: text.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            for (final Map<String, String> r in records)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: AVITCard(
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              r['subject'] ?? '',
+                              style: text.titleSmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${r['category']} • ${r['urgency']} urgency',
+                              style: text.labelSmall,
+                            ),
+                            if ((r['name'] ?? '').isNotEmpty ||
+                                (r['studentId'] ?? '').isNotEmpty) ...<Widget>[
+                              const SizedBox(height: 2),
+                              Text(
+                                [
+                                  if ((r['name'] ?? '').isNotEmpty) r['name'],
+                                  if ((r['studentId'] ?? '').isNotEmpty)
+                                    r['studentId'],
+                                ].join(' • '),
+                                style: text.labelSmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                    AVITStatusChip(
-                      label: r['ref'] ?? '',
-                      tone: AVITStatusTone.success,
-                      compact: true,
-                    ),
-                  ],
+                      AVITStatusChip(
+                        label: r['ref'] ?? '',
+                        tone: AVITStatusTone.success,
+                        compact: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
         ],
       ),
     );
@@ -1672,17 +2006,20 @@ class _SupportCard extends StatelessWidget {
     required this.title,
     required this.body,
     this.status,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String body;
   final String? status;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     return AVITCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

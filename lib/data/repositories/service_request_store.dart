@@ -17,7 +17,7 @@ abstract class ServiceRequestStore {
   Future<String> submit(Map<String, Object?> data);
 
   /// Most recent requests for the signed-in student, newest first.
-  Future<List<Map<String, String>>> recent({int limit = 5});
+  Future<List<Map<String, String>>> recent({int limit = 20});
 
   /// Uploads a real attachment and returns its download URL, or null when
   /// the backend is unavailable (attachments are optional).
@@ -41,7 +41,7 @@ class DemoServiceRequestStore implements ServiceRequestStore {
   }
 
   @override
-  Future<List<Map<String, String>>> recent({int limit = 5}) async =>
+  Future<List<Map<String, String>>> recent({int limit = 20}) async =>
       const <Map<String, String>>[];
 
   @override
@@ -103,7 +103,7 @@ class FirebaseServiceRequestStore implements ServiceRequestStore {
   }
 
   @override
-  Future<List<Map<String, String>>> recent({int limit = 5}) async {
+  Future<List<Map<String, String>>> recent({int limit = 20}) async {
     final FirebaseFirestore? db = FirebaseBridge.db;
     final String? uid = FirebaseBridge.uid;
     if (db == null || uid == null) return const <Map<String, String>>[];
@@ -128,6 +128,8 @@ class FirebaseServiceRequestStore implements ServiceRequestStore {
             'subject': '${d.data()['subject'] ?? ''}',
             'category': '${d.data()['category'] ?? ''}',
             'urgency': '${d.data()['urgency'] ?? ''}',
+            'name': '${d.data()['studentName'] ?? ''}',
+            'studentId': '${d.data()['studentId'] ?? ''}',
           },
       ];
     } catch (_) {
