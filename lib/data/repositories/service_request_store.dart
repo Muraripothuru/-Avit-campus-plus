@@ -29,20 +29,35 @@ abstract class ServiceRequestStore {
 }
 
 /// In-memory store used when Firebase is not initialised.
+///
+/// Keeps every submission for the whole session (newest first) so the
+/// requests list still shows a student's previous records after they
+/// navigate away from the service request screen and come back.
 class DemoServiceRequestStore implements ServiceRequestStore {
   DemoServiceRequestStore({Random? random}) : _random = random ?? Random();
 
   final Random _random;
+  final List<Map<String, String>> _records = <Map<String, String>>[];
 
   @override
   Future<String> submit(Map<String, Object?> data) async {
     final int n = _random.nextInt(9000) + 1000;
-    return 'SR-${DateTime.now().year}-$n';
+    final String ref = 'SR-${DateTime.now().year}-$n';
+    _records.insert(0, <String, String>{
+      'ref': ref,
+      'subject': '${data['subject'] ?? ''}',
+      'category': '${data['category'] ?? ''}',
+      'urgency': '${data['urgency'] ?? ''}',
+      'name': '${data['studentName'] ?? ''}',
+      'studentId': '${data['studentId'] ?? ''}',
+    });
+    if (_records.length > 100) _records.removeLast();
+    return ref;
   }
 
   @override
   Future<List<Map<String, String>>> recent({int limit = 20}) async =>
-      const <Map<String, String>>[];
+      _records.take(limit).toList();
 
   @override
   Future<String?> uploadAttachment({

@@ -398,11 +398,16 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Firestore in live mode, the in-memory demo store otherwise — tests
-  /// never initialise Firebase so they keep exercising demo behaviour.
+  /// Firestore in live mode, the session-scoped in-memory demo store
+  /// otherwise — tests never initialise Firebase so they keep exercising
+  /// demo behaviour. One instance per AppState so submissions survive
+  /// navigating away from the service request screen and back.
+  final DemoServiceRequestStore _demoServiceRequests =
+      DemoServiceRequestStore();
+
   ServiceRequestStore get _serviceRequests => FirebaseBridge.ready
       ? FirebaseServiceRequestStore()
-      : DemoServiceRequestStore();
+      : _demoServiceRequests;
 
   /// Submits a campus service request and returns its SR reference.
   ///
@@ -417,12 +422,22 @@ class AppState extends ChangeNotifier {
         // Fall through to the demo store.
       }
     }
-    return DemoServiceRequestStore().submit(data);
+    return _demoServiceRequests.submit(data);
   }
 
-  /// Most recent requests for the signed-in student (empty in demo mode).
-  Future<List<Map<String, String>>> recentServiceRequests() =>
-      _serviceRequests.recent();
+  /// Most recent requests for the signed-in student, newest first —
+  /// reloaded from the store whenever the request screen is reopened.
+  Future<List<Map<String, String>>> recentServiceRequests() async {
+    final List<Map<String, String>> records = await _serviceRequests.recent();
+    if (FirebaseBridge.ready) return records; // already scoped by ownerUid
+    final String? studentId = _user?.studentId;
+    if (studentId == null || studentId.isEmpty) {
+      return <Map<String, String>>[];
+    }
+    return records
+        .where((Map<String, String> r) => r['studentId'] == studentId)
+        .toList();
+  }
 
   void toggleEventFavourite(String eventId) {
     // Demonstrates setState-style local state via the shared notifier.

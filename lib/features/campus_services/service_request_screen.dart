@@ -213,6 +213,31 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   final TextEditingController _recordSearch = TextEditingController();
   String _recordsQuery = '';
 
+  /// Field the search box matches against (records scope menu). Menu labels
+  /// are worded uniquely so they never collide with the form's field labels.
+  static const List<({String menu, String hint, List<String> fields})>
+  _searchScopes = <({String menu, String hint, List<String> fields})>[
+    (
+      menu: 'Search everywhere',
+      hint: 'every field',
+      fields: <String>[
+        'ref',
+        'subject',
+        'category',
+        'urgency',
+        'name',
+        'studentId',
+      ],
+    ),
+    (menu: 'By student name', hint: 'student name', fields: <String>['name']),
+    (menu: 'By student ID', hint: 'student ID', fields: <String>['studentId']),
+    (menu: 'By service', hint: 'service', fields: <String>['category']),
+    (menu: 'By subject', hint: 'subject', fields: <String>['subject']),
+    (menu: 'By reference', hint: 'reference', fields: <String>['ref']),
+    (menu: 'By urgency', hint: 'urgency', fields: <String>['urgency']),
+  ];
+  int _recordsScope = 0;
+
   @override
   void dispose() {
     _scroll.dispose();
@@ -645,56 +670,60 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
         title: 'Service Request',
         subtitle: 'Campus support desk',
       ),
-      body: ListView(
+      body: Scrollbar(
         controller: _scroll,
-        padding: AppSpacing.screenPadding,
-        children: <Widget>[
-          _buildIntro(text),
-          const SizedBox(height: AppSpacing.md),
-          _buildStepper(text),
-          if (_draftRestored && _step == 0 && !_submitted) ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
-            _buildDraftBanner(),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 360),
-            switchInCurve: Curves.easeOutCubic,
-            transitionBuilder: (Widget child, Animation<double> anim) =>
-                FadeTransition(
-                  opacity: anim,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.03),
-                      end: Offset.zero,
-                    ).animate(anim),
-                    child: child,
+        thumbVisibility: true,
+        child: ListView(
+          controller: _scroll,
+          padding: AppSpacing.screenPadding,
+          children: <Widget>[
+            _buildIntro(text),
+            const SizedBox(height: AppSpacing.md),
+            _buildStepper(text),
+            if (_draftRestored && _step == 0 && !_submitted) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              _buildDraftBanner(),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 360),
+              switchInCurve: Curves.easeOutCubic,
+              transitionBuilder: (Widget child, Animation<double> anim) =>
+                  FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.03),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
+                    ),
                   ),
-                ),
-            child: _submitted
-                ? KeyedSubtree(
-                    key: const ValueKey<String>('done'),
-                    child: _buildSuccess(),
-                  )
-                : _step == 0
-                ? KeyedSubtree(
-                    key: ValueKey<String>('details$_epoch'),
-                    child: _buildDetailsStep(text),
-                  )
-                : KeyedSubtree(
-                    key: ValueKey<String>('review$_epoch'),
-                    child: _buildReviewStep(text),
-                  ),
-          ),
-          if (_recent.isNotEmpty)
-            KeyedSubtree(key: _recordsKey, child: _buildRecent(text)),
-          // Hidden while reviewing so the step keeps its compact scroll range.
-          if (_step == 0 || _submitted) ...<Widget>[
-            const SizedBox(height: AppSpacing.lg),
-            _buildSupportSection(text),
+              child: _submitted
+                  ? KeyedSubtree(
+                      key: const ValueKey<String>('done'),
+                      child: _buildSuccess(),
+                    )
+                  : _step == 0
+                  ? KeyedSubtree(
+                      key: ValueKey<String>('details$_epoch'),
+                      child: _buildDetailsStep(text),
+                    )
+                  : KeyedSubtree(
+                      key: ValueKey<String>('review$_epoch'),
+                      child: _buildReviewStep(text),
+                    ),
+            ),
+            if (_recent.isNotEmpty)
+              KeyedSubtree(key: _recordsKey, child: _buildRecent(text)),
+            // Hidden while reviewing so the step keeps its compact scroll range.
+            if (_step == 0 || _submitted) ...<Widget>[
+              const SizedBox(height: AppSpacing.lg),
+              _buildSupportSection(text),
+            ],
+            const SizedBox(height: AppSpacing.xxl),
           ],
-          const SizedBox(height: AppSpacing.xxl),
-        ],
+        ),
       ),
     );
   }
@@ -1884,19 +1913,15 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   );
 
   /// Records matching the live search query, newest first. Matches against
-  /// reference, subject, service category, urgency, student name and ID.
+  /// the fields of the active scope (default: every searchable field).
   List<Map<String, String>> get _filteredRecent {
     final String q = _recordsQuery.trim().toLowerCase();
     if (q.isEmpty) return _recent;
+    final List<String> fields = _searchScopes[_recordsScope].fields;
     return _recent.where((Map<String, String> r) {
-      return <String>[
-        r['ref'] ?? '',
-        r['subject'] ?? '',
-        r['category'] ?? '',
-        r['urgency'] ?? '',
-        r['name'] ?? '',
-        r['studentId'] ?? '',
-      ].any((String field) => field.toLowerCase().contains(q));
+      return fields.any(
+        (String field) => (r[field] ?? '').toLowerCase().contains(q),
+      );
     }).toList();
   }
 
@@ -1917,14 +1942,45 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
             subtitle: _recordsQuery.trim().isEmpty
                 ? '${_recent.length} submitted this session'
                 : '${records.length} of ${_recent.length} match '
-                      '"${_recordsQuery.trim()}"',
+                      '"${_recordsQuery.trim()}"'
+                      '${_recordsScope == 0 ? '' : ' by ${_searchScopes[_recordsScope].hint}'}',
           ),
           const SizedBox(height: AppSpacing.sm),
-          AVITSearchField(
-            controller: _recordSearch,
-            hint: 'Search by name, ID, service, subject or reference',
-            onChanged: _onRecordSearchChanged,
-            onClear: () => setState(() => _recordsQuery = ''),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: AVITSearchField(
+                  controller: _recordSearch,
+                  hint: _recordsScope == 0
+                      ? 'Search by name, ID, service, subject or reference'
+                      : 'Search in ${_searchScopes[_recordsScope].hint}',
+                  onChanged: _onRecordSearchChanged,
+                  onClear: () => setState(() => _recordsQuery = ''),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              PopupMenuButton<int>(
+                tooltip: 'Search options',
+                icon: Icon(
+                  Icons.filter_list_rounded,
+                  size: 20,
+                  color: _recordsScope == 0
+                      ? AppColors.textSecondary
+                      : AppColors.royalBlue,
+                ),
+                onSelected: (int index) => setState(() {
+                  _recordsScope = index;
+                }),
+                itemBuilder: (BuildContext ctx) => <PopupMenuEntry<int>>[
+                  for (int i = 0; i < _searchScopes.length; i++)
+                    CheckedPopupMenuItem<int>(
+                      value: i,
+                      checked: _recordsScope == i,
+                      child: Text(_searchScopes[i].menu),
+                    ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
           if (records.isEmpty)
