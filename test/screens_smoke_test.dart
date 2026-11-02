@@ -23,15 +23,19 @@ import 'package:avit_campus_plus/features/auth/welcome_screen.dart';
 import 'package:avit_campus_plus/features/campus/campus_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/cafeteria_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/campus_map_screen.dart';
+import 'package:avit_campus_plus/features/campus_services/facility_booking_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/gate_pass_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/health_centre_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/hostel_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/library_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/lost_found_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/smart_queue_screen.dart';
+import 'package:avit_campus_plus/features/campus_services/service_records_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/service_request_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/transport_screen.dart';
 import 'package:avit_campus_plus/features/campus_services/visitor_pass_screen.dart';
+import 'package:avit_campus_plus/features/content/campus_announcements_screen.dart';
+import 'package:avit_campus_plus/features/content/services_grid_screen.dart';
 import 'package:avit_campus_plus/features/dashboard/dashboard_screen.dart';
 import 'package:avit_campus_plus/features/profile/edit_profile_screen.dart';
 import 'package:avit_campus_plus/features/profile/profile_screen.dart';
@@ -234,9 +238,35 @@ void main() {
           student,
         ),
         (
+          Routes.facilityBooking,
+          'facility booking',
+          () => screenOf(FacilityBookingScreen),
+          student,
+        ),
+        (
           Routes.serviceRequest,
           'service request form',
           () => screenOf(ServiceRequestScreen),
+          student,
+        ),
+        (
+          Routes.serviceRecords,
+          'request records',
+          () => screenOf(ServiceRecordsScreen),
+          student,
+        ),
+
+        // Student: content section
+        (
+          Routes.campusAnnouncements,
+          'campus announcements',
+          () => screenOf(CampusAnnouncementsScreen),
+          student,
+        ),
+        (
+          Routes.servicesGrid,
+          'services grid',
+          () => screenOf(ServicesGridScreen),
           student,
         ),
 

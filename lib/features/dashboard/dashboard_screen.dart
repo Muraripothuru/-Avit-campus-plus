@@ -157,7 +157,10 @@ class _DashboardScreenState extends State<DashboardScreen>
             title: 'Announcements',
             subtitle: 'Latest from AVIT',
             actionLabel: 'See all',
-            onAction: () => Navigator.pushNamed(context, Routes.announcements),
+            onAction: () => Navigator.pushNamed(
+              context,
+              Routes.campusAnnouncements,
+            ),
           ),
           if (_announcements.isEmpty)
             const AVITEmptyState(

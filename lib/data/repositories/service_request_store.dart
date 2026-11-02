@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/services/firebase_bridge.dart';
 
@@ -28,19 +30,128 @@ abstract class ServiceRequestStore {
   });
 }
 
-/// In-memory store used when Firebase is not initialised.
+/// Optional persistence for [DemoServiceRequestStore].
+///
+/// The demo store stays in memory when this is null; supplying a
+/// shared_preferences backed implementation makes submissions survive an
+/// app restart so the records screen keeps its history.
+abstract class ServiceRequestPersistence {
+  /// Restored records (newest first), or null when nothing was saved yet.
+  Future<List<Map<String, String>>?> read();
+
+  /// Replaces the persisted record list.
+  Future<void> write(List<Map<String, String>> records);
+}
+
+/// [ServiceRequestPersistence] backed by SharedPreferences (demo mode).
+class PrefsServiceRequestPersistence implements ServiceRequestPersistence {
+  PrefsServiceRequestPersistence(this._prefs);
+
+  static const String storageKey = 'avit.service.request.records';
+
+  final SharedPreferences _prefs;
+
+  /// Opens the preference store, or returns null when the platform channel
+  /// is unavailable (widget tests) so callers fall back to memory.
+  static Future<PrefsServiceRequestPersistence?> tryCreate() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance()
+          .timeout(const Duration(seconds: 3));
+      return PrefsServiceRequestPersistence(prefs);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<List<Map<String, String>>?> read() async {
+    final String? raw = _prefs.getString(storageKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is! List<Object?>) return null;
+      return <Map<String, String>>[
+        for (final Object? item in decoded)
+          if (item is Map<Object?, Object?>)
+            <String, String>{
+              for (final MapEntry<Object?, Object?> e in item.entries)
+                if (e.key is String && e.value != null)
+                  '${e.key}': '${e.value}',
+            },
+      ];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> write(List<Map<String, String>> records) async {
+    try {
+      await _prefs.setString(storageKey, jsonEncode(records));
+    } catch (_) {
+      // Losing a demo write must never break the submit flow.
+    }
+  }
+}
+
+/// Resolves SharedPreferences once, lazily and failure-safe: every call
+/// degrades to a no-op when the platform channel is missing, so the store
+/// simply keeps its records in memory.
+class LazyPrefsServiceRequestPersistence implements ServiceRequestPersistence {
+  LazyPrefsServiceRequestPersistence()
+    : _future = PrefsServiceRequestPersistence.tryCreate();
+
+  final Future<PrefsServiceRequestPersistence?> _future;
+
+  @override
+  Future<List<Map<String, String>>?> read() async =>
+      (await _future)?.read();
+
+  @override
+  Future<void> write(List<Map<String, String>> records) async =>
+      (await _future)?.write(records);
+}
+
+/// Session store used when Firebase is not initialised.
 ///
 /// Keeps every submission for the whole session (newest first) so the
 /// requests list still shows a student's previous records after they
-/// navigate away from the service request screen and come back.
+/// navigate away from the service request screen and come back — and,
+/// when a [ServiceRequestPersistence] is supplied, across app restarts.
 class DemoServiceRequestStore implements ServiceRequestStore {
-  DemoServiceRequestStore({Random? random}) : _random = random ?? Random();
+  DemoServiceRequestStore({Random? random, this.persistence})
+    : _random = random ?? Random();
 
   final Random _random;
-  final List<Map<String, String>> _records = <Map<String, String>>[];
+  final ServiceRequestPersistence? persistence;
+
+  List<Map<String, String>> _records = <Map<String, String>>[];
+  Future<void>? _hydrated;
+
+  Future<void> _ensureLoaded() => _hydrated ??= _load();
+
+  Future<void> _load() async {
+    if (persistence == null) return;
+    try {
+      final List<Map<String, String>>? restored = await persistence!.read();
+      if (restored != null) _records = restored;
+    } catch (_) {
+      // Corrupt or unavailable storage — start from an empty session list.
+    }
+  }
+
+  Future<void> _persist() async {
+    if (persistence == null) return;
+    try {
+      await persistence!.write(_records);
+    } catch (_) {
+      // Persistence is best-effort; the in-memory copy already succeeded.
+    }
+  }
 
   @override
   Future<String> submit(Map<String, Object?> data) async {
+    await _ensureLoaded();
     final int n = _random.nextInt(9000) + 1000;
     final String ref = 'SR-${DateTime.now().year}-$n';
     _records.insert(0, <String, String>{
@@ -50,14 +161,21 @@ class DemoServiceRequestStore implements ServiceRequestStore {
       'urgency': '${data['urgency'] ?? ''}',
       'name': '${data['studentName'] ?? ''}',
       'studentId': '${data['studentId'] ?? ''}',
+      'description': '${data['description'] ?? ''}',
+      'status': 'Submitted',
+      'preferredDate': '${data['preferredDate'] ?? ''}',
+      'createdAt': DateTime.now().toIso8601String(),
     });
     if (_records.length > 100) _records.removeLast();
+    await _persist();
     return ref;
   }
 
   @override
-  Future<List<Map<String, String>>> recent({int limit = 20}) async =>
-      _records.take(limit).toList();
+  Future<List<Map<String, String>>> recent({int limit = 20}) async {
+    await _ensureLoaded();
+    return _records.take(limit).toList();
+  }
 
   @override
   Future<String?> uploadAttachment({
@@ -145,6 +263,10 @@ class FirebaseServiceRequestStore implements ServiceRequestStore {
             'urgency': '${d.data()['urgency'] ?? ''}',
             'name': '${d.data()['studentName'] ?? ''}',
             'studentId': '${d.data()['studentId'] ?? ''}',
+            'description': '${d.data()['description'] ?? ''}',
+            'status': '${d.data()['status'] ?? 'Submitted'}',
+            'preferredDate': '${d.data()['preferredDate'] ?? ''}',
+            'createdAt': _timestampOf(d).toIso8601String(),
           },
       ];
     } catch (_) {

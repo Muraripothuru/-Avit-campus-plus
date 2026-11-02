@@ -192,6 +192,14 @@ class _AlertsScreenState extends State<AlertsScreen>
           AVITSectionHeader(
             title: 'Announcements',
             subtitle: 'Published by AVIT administration',
+            // Students get the full Announcements section; staff (e.g.
+            // security) keep only the filtered duty notices shown here.
+            actionLabel: AccessPolicy.allows(_role, Routes.campusAnnouncements)
+                ? 'See all'
+                : null,
+            onAction: AccessPolicy.allows(_role, Routes.campusAnnouncements)
+                ? () => Navigator.pushNamed(context, Routes.campusAnnouncements)
+                : null,
           ),
           if (_announcements.isEmpty)
             const AVITEmptyState(

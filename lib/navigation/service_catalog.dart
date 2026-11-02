@@ -203,6 +203,32 @@ abstract final class ServiceCatalog {
             contact: 'helpdesk@avit.ac.in',
           ),
           ServiceEntry(
+            'Request Records',
+            Icons.receipt_long_rounded,
+            Routes.serviceRecords,
+            'Track your submissions',
+            AVITStatusTone.brand,
+            description:
+                'Search, filter by urgency and review every service request '
+                'you have submitted from this device.',
+            location: 'Online — available anywhere',
+            hours: 'Available 24/7',
+            contact: 'helpdesk@avit.ac.in',
+          ),
+          ServiceEntry(
+            'Facility Booking',
+            Icons.event_available_rounded,
+            Routes.facilityBooking,
+            'Reserve a campus space',
+            AVITStatusTone.brand,
+            description:
+                'Reserve a discussion room, sports hall, seminar room or '
+                'music practice room with a confirmed time slot.',
+            location: 'Sports & Seminar complex, Central Campus',
+            hours: 'Bookings open 08:00–10:00 PM daily',
+            contact: 'facilities@avit.ac.in',
+          ),
+          ServiceEntry(
             'Smart Queue',
             Icons.hourglass_top_rounded,
             Routes.smartQueue,

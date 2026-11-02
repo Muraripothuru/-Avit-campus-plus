@@ -11,6 +11,7 @@ import '../core/services/firebase_bridge.dart';
 import '../core/services/permission_service.dart';
 import '../core/utils/app_exception.dart';
 import '../core/utils/formatters.dart';
+import '../models/facility_booking.dart';
 import '../models/user.dart';
 import '../../data/datasources/api_client.dart';
 import '../../data/datasources/demo_catalog.dart';
@@ -398,12 +399,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Firestore in live mode, the session-scoped in-memory demo store
-  /// otherwise — tests never initialise Firebase so they keep exercising
-  /// demo behaviour. One instance per AppState so submissions survive
-  /// navigating away from the service request screen and back.
+  /// Firestore in live mode, the session-scoped demo store otherwise —
+  /// tests never initialise Firebase so they keep exercising demo
+  /// behaviour. One instance per AppState so submissions survive
+  /// navigating away from the service request screen and back; the demo
+  /// store additionally persists to shared_preferences so records survive
+  /// an app restart too.
   final DemoServiceRequestStore _demoServiceRequests =
-      DemoServiceRequestStore();
+      DemoServiceRequestStore(persistence: LazyPrefsServiceRequestPersistence());
 
   ServiceRequestStore get _serviceRequests => FirebaseBridge.ready
       ? FirebaseServiceRequestStore()
@@ -427,8 +430,12 @@ class AppState extends ChangeNotifier {
 
   /// Most recent requests for the signed-in student, newest first —
   /// reloaded from the store whenever the request screen is reopened.
-  Future<List<Map<String, String>>> recentServiceRequests() async {
-    final List<Map<String, String>> records = await _serviceRequests.recent();
+  Future<List<Map<String, String>>> recentServiceRequests({
+    int limit = 20,
+  }) async {
+    final List<Map<String, String>> records = await _serviceRequests.recent(
+      limit: limit,
+    );
     if (FirebaseBridge.ready) return records; // already scoped by ownerUid
     final String? studentId = _user?.studentId;
     if (studentId == null || studentId.isEmpty) {
@@ -437,6 +444,24 @@ class AppState extends ChangeNotifier {
     return records
         .where((Map<String, String> r) => r['studentId'] == studentId)
         .toList();
+  }
+
+  /// Confirmed facility bookings held by the app-owned state: the list
+  /// survives navigating away from the booking screen and back, and — as
+  /// the booking lab requires — resets when the app restarts.
+  final List<Booking> _facilityBookings = <Booking>[];
+
+  List<Booking> get facilityBookings =>
+      List<Booking>.unmodifiable(_facilityBookings);
+
+  void addFacilityBooking(Booking booking) {
+    _facilityBookings.add(booking);
+    notifyListeners();
+  }
+
+  void cancelFacilityBooking(Booking booking) {
+    _facilityBookings.remove(booking);
+    notifyListeners();
   }
 
   void toggleEventFavourite(String eventId) {

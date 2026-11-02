@@ -29,15 +29,19 @@ import 'features/auth/splash_screen.dart';
 import 'features/auth/welcome_screen.dart';
 import 'features/campus_services/cafeteria_screen.dart';
 import 'features/campus_services/campus_map_screen.dart';
+import 'features/campus_services/facility_booking_screen.dart';
 import 'features/campus_services/gate_pass_screen.dart';
 import 'features/campus_services/health_centre_screen.dart';
 import 'features/campus_services/hostel_screen.dart';
 import 'features/campus_services/library_screen.dart';
 import 'features/campus_services/lost_found_screen.dart';
 import 'features/campus_services/smart_queue_screen.dart';
+import 'features/campus_services/service_records_screen.dart';
 import 'features/campus_services/service_request_screen.dart';
 import 'features/campus_services/transport_screen.dart';
 import 'features/campus_services/visitor_pass_screen.dart';
+import 'features/content/campus_announcements_screen.dart';
+import 'features/content/services_grid_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'features/safety/complaints_screen.dart';
 import 'features/safety/emergency_screen.dart';
@@ -146,6 +150,7 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       // Campus services
       Routes.gatePass => const GatePassScreen(),
       Routes.serviceRequest => const ServiceRequestScreen(),
+      Routes.serviceRecords => const ServiceRecordsScreen(),
       Routes.transport => const TransportScreen(),
       Routes.visitorPass => const VisitorPassScreen(),
       Routes.smartQueue => const SmartQueueScreen(),
@@ -155,9 +160,14 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       Routes.hostel => const HostelScreen(),
       Routes.lostFound => const LostFoundScreen(),
       Routes.healthCentre => const HealthCentreScreen(),
+      Routes.facilityBooking => const FacilityBookingScreen(),
 
       // Discovery
       Routes.search => const SearchScreen(),
+
+      // Student content
+      Routes.campusAnnouncements => const CampusAnnouncementsScreen(),
+      Routes.servicesGrid => const ServicesGridScreen(),
 
       // Safety
       Routes.emergency => const EmergencyScreen(),

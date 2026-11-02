@@ -30,6 +30,10 @@ abstract final class Routes {
   static const String gatePass = '/gate-pass';
   static const String serviceRequest = '/service-request';
 
+  /// Records of every request the student has submitted — reached from the
+  /// request form's "See all" action and the campus services catalogue.
+  static const String serviceRecords = '/service-records';
+
   /// Service details is pushed directly (it needs the selected
   /// `ServiceEntry`), so it is never resolved from a name — but it stays in
   /// [protected] so an accidental deep link can never expose it unsigned.
@@ -43,9 +47,14 @@ abstract final class Routes {
   static const String hostel = '/hostel';
   static const String lostFound = '/lost-found';
   static const String healthCentre = '/health-centre';
+  static const String facilityBooking = '/facility-booking';
 
   // Discovery
   static const String search = '/search';
+
+  // Student content
+  static const String campusAnnouncements = '/campus-announcements';
+  static const String servicesGrid = '/services-grid';
 
   // Safety
   static const String emergency = '/emergency';
@@ -83,6 +92,7 @@ abstract final class Routes {
     academicCalendar,
     gatePass,
     serviceRequest,
+    serviceRecords,
     serviceDetail,
     transport,
     visitorPass,
@@ -93,7 +103,10 @@ abstract final class Routes {
     hostel,
     lostFound,
     healthCentre,
+    facilityBooking,
     search,
+    campusAnnouncements,
+    servicesGrid,
     emergency,
     reportIncident,
     complaints,

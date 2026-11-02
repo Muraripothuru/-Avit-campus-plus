@@ -732,7 +732,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   Widget _buildSupportSection(TextTheme text) {
     final String status = _recent.isEmpty
         ? 'No active request yet.'
-        : '${_recent.length} submitted this session';
+        : '${_recent.length} submitted so far';
     return AVITFadeUp(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1003,7 +1003,10 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                               variant: AVITButtonVariant.secondary,
                               onPressed: () {
                                 Navigator.pop(ctx);
-                                _scrollToRecords();
+                                Navigator.pushNamed(
+                                  context,
+                                  Routes.serviceRecords,
+                                );
                               },
                             ),
                           ),
@@ -1023,28 +1026,6 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
         );
       },
     );
-  }
-
-  /// Closes any sheet, then scrolls the records list into view.
-  void _scrollToRecords() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scroll.hasClients) return;
-      final BuildContext? ctx = _recordsKey.currentContext;
-      if (ctx != null) {
-        Scrollable.ensureVisible(
-          ctx,
-          duration: const Duration(milliseconds: 360),
-          curve: Curves.easeOutCubic,
-          alignment: 0.05,
-        );
-      } else {
-        _scroll.animateTo(
-          _scroll.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 360),
-          curve: Curves.easeOutCubic,
-        );
-      }
-    });
   }
 
   Widget _buildIntro(TextTheme text) => AVITFadeUp(
@@ -1940,10 +1921,13 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
           AVITSectionHeader(
             title: 'Your recent requests',
             subtitle: _recordsQuery.trim().isEmpty
-                ? '${_recent.length} submitted this session'
+                ? '${_recent.length} submitted so far'
                 : '${records.length} of ${_recent.length} match '
                       '"${_recordsQuery.trim()}"'
                       '${_recordsScope == 0 ? '' : ' by ${_searchScopes[_recordsScope].hint}'}',
+            actionLabel: 'See all',
+            onAction: () =>
+                Navigator.pushNamed(context, Routes.serviceRecords),
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(

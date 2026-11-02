@@ -29,6 +29,10 @@ class AVITDrawer extends StatelessWidget {
           (_Item('Dashboard', Icons.dashboard_rounded), Routes.dashboard),
           (_Item('Campus', Icons.location_city_rounded), Routes.campus),
           (_Item('Activities', Icons.event_note_rounded), Routes.activities),
+          (
+            _Item('Announcements', Icons.campaign_rounded),
+            Routes.campusAnnouncements,
+          ),
           (_Item('Notifications', Icons.notifications_rounded), Routes.alerts),
         ],
       ),
@@ -52,6 +56,11 @@ class AVITDrawer extends StatelessWidget {
       (
         _Group('Campus Services'),
         <(_Item, String)>[
+          (_Item('Services', Icons.grid_view_rounded), Routes.servicesGrid),
+          (
+            _Item('Facility Booking', Icons.event_available_rounded),
+            Routes.facilityBooking,
+          ),
           (_Item('Gate Pass', Icons.qr_code_rounded), Routes.gatePass),
           (_Item('Transport', Icons.directions_bus_rounded), Routes.transport),
           (_Item('Visitor Pass', Icons.badge_rounded), Routes.visitorPass),
