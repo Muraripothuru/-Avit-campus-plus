@@ -52,6 +52,8 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
 
   Future<void> _load() async {
     final AppState state = AppScope.of(context).state;
+    // Restored bookings must be in memory before this frame reads them.
+    await state.ensureFacilityBookingsLoaded();
     final List<Map<String, String>> records = await state.allServiceRequests();
     if (!mounted) return;
     setState(() {

@@ -173,6 +173,10 @@ class _FacilityBookingScreenState extends State<FacilityBookingScreen> {
     if (!fieldsValid || _dayError != null || _timeError != null) return;
 
     final AppState state = AppScope.of(context).state;
+    // Conflict checks must see bookings restored from the previous
+    // session, not just the ones made after this screen opened.
+    await state.ensureFacilityBookingsLoaded();
+    if (!mounted) return;
     String? problem = BookingRules.slot(
       facilityId: _facilityId!,
       start: _start,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/constants/app_constants.dart';
@@ -21,6 +23,7 @@ import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/campus_repository.dart';
 import '../../data/repositories/content_repository.dart';
 import '../../data/repositories/gate_pass_repository.dart';
+import '../../data/repositories/facility_booking_store.dart';
 import '../../data/repositories/service_request_store.dart';
 import '../../data/repositories/staff_repository.dart';
 import '../../data/repositories/visitor_pass_repository.dart';
@@ -191,7 +194,13 @@ class AppDependencies {
 /// `setState` for their own local UI state (tab index, favourites, counters)
 /// as required by the assignment brief.
 class AppState extends ChangeNotifier {
-  AppState(this.deps);
+  AppState(this.deps) {
+    // Booking history must be restored before the admin inbox or the
+    // booking form consults it, so hydration starts the moment the app
+    // boots; screens that need it immediately can await
+    // [ensureFacilityBookingsLoaded].
+    unawaited(ensureFacilityBookingsLoaded());
+  }
 
   final AppDependencies deps;
 
@@ -408,81 +417,163 @@ class AppState extends ChangeNotifier {
   final DemoServiceRequestStore _demoServiceRequests =
       DemoServiceRequestStore(persistence: LazyPrefsServiceRequestPersistence());
 
-  ServiceRequestStore get _serviceRequests => FirebaseBridge.ready
-      ? FirebaseServiceRequestStore()
-      : _demoServiceRequests;
-
   /// Submits a campus service request and returns its SR reference.
   ///
-  /// Firestore is authoritative whenever it accepts the write; if the
-  /// backend rejects it (offline, rules, auth not yet provisioned) the demo
-  /// store keeps the form's success contract so the UI never dead-ends.
+  /// The local store always records the submission first so the admin
+  /// inbox and the student's history work even when Firestore drops the
+  /// mirrored write (its rules only let an owner read their own
+  /// documents). The cloud copy is best-effort, kept under the same
+  /// reference.
   Future<String> submitServiceRequest(Map<String, Object?> data) async {
+    final String ref = await _demoServiceRequests.submit(data);
     if (FirebaseBridge.ready) {
       try {
-        return await FirebaseServiceRequestStore().submit(data);
+        await FirebaseServiceRequestStore().submit(data, reference: ref);
       } catch (_) {
-        // Fall through to the demo store.
+        // Cloud mirror is best-effort; the local copy already succeeded.
       }
     }
-    return _demoServiceRequests.submit(data);
+    return ref;
   }
 
-  /// Most recent requests for the signed-in student, newest first —
-  /// reloaded from the store whenever the request screen is reopened.
+  /// Most recent requests for the signed-in student, newest first.
+  ///
+  /// Local records are always merged with the owner-scoped Firestore
+  /// list so submissions that fell back to the demo store (or were made
+  /// before the mirror existed) still show up.
   Future<List<Map<String, String>>> recentServiceRequests({
     int limit = 20,
   }) async {
-    final List<Map<String, String>> records = await _serviceRequests.recent(
+    final List<Map<String, String>> local = await _demoServiceRequests.recent(
       limit: limit,
     );
-    if (FirebaseBridge.ready) return records; // already scoped by ownerUid
     final String? studentId = _user?.studentId;
-    if (studentId == null || studentId.isEmpty) {
-      return <Map<String, String>>[];
-    }
-    return records
-        .where((Map<String, String> r) => r['studentId'] == studentId)
-        .toList();
+    final List<Map<String, String>> mine = studentId == null ||
+            studentId.isEmpty
+        ? <Map<String, String>>[]
+        : local
+              .where((Map<String, String> r) => r['studentId'] == studentId)
+              .toList();
+    if (!FirebaseBridge.ready) return mine;
+    final List<Map<String, String>> owner = await FirebaseServiceRequestStore()
+        .recent(limit: limit);
+    return _mergeRequestRecords(owner, mine, limit);
   }
 
   /// Every service request across all students, newest first — the admin
   /// operations view, deliberately unscoped so staff see the whole queue.
+  ///
+  /// Firestore's owner-only list rules deny this query outright, so the
+  /// local mirror is always merged in; without it the admin portal would
+  /// look empty no matter what students submitted.
   Future<List<Map<String, String>>> allServiceRequests({
     int limit = 100,
-  }) => _serviceRequests.all(limit: limit);
+  }) async {
+    final List<Map<String, String>> local = await _demoServiceRequests.all(
+      limit: limit,
+    );
+    if (!FirebaseBridge.ready) return local;
+    final List<Map<String, String>> cloud = await FirebaseServiceRequestStore()
+        .all(limit: limit);
+    return _mergeRequestRecords(cloud, local, limit);
+  }
 
-  /// Moves one request to a new lifecycle status. Firestore is
-  /// authoritative when it accepts the write, otherwise the demo store
-  /// applies it (mirroring [submitServiceRequest]).
+  /// Union of the cloud and local records keyed by SR reference — local
+  /// wins ties because it carries the latest triage status.
+  List<Map<String, String>> _mergeRequestRecords(
+    List<Map<String, String>> cloud,
+    List<Map<String, String>> local,
+    int limit,
+  ) {
+    final Map<String, Map<String, String>> byRef =
+        <String, Map<String, String>>{
+          for (final Map<String, String> r in cloud)
+            if ((r['ref'] ?? '').isNotEmpty) r['ref']!: r,
+        };
+    for (final Map<String, String> r in local) {
+      final String ref = r['ref'] ?? '';
+      if (ref.isNotEmpty) byRef[ref] = r;
+    }
+    final List<Map<String, String>> merged = byRef.values.toList()
+      ..sort(
+        (Map<String, String> a, Map<String, String> b) =>
+            (b['createdAt'] ?? '').compareTo(a['createdAt'] ?? ''),
+      );
+    return merged.take(limit).toList();
+  }
+
+  /// Moves one request to a new lifecycle status. The local copy always
+  /// takes the change (Firestore owner-only rules reject status patches),
+  /// the cloud write is best-effort on top.
   Future<void> setServiceRequestStatus(String reference, String status) async {
     if (FirebaseBridge.ready) {
       try {
         await FirebaseServiceRequestStore().updateStatus(reference, status);
-        return;
       } catch (_) {
-        // Fall through to the demo store.
+        // Owner-only rules reject status patches; the local copy carries it.
       }
     }
     return _demoServiceRequests.updateStatus(reference, status);
   }
 
   /// Confirmed facility bookings held by the app-owned state: the list
-  /// survives navigating away from the booking screen and back, and — as
-  /// the booking lab requires — resets when the app restarts.
+  /// survives navigating away from the booking screen and back, is
+  /// mirrored into shared_preferences so the admin inbox shows bookings
+  /// made before a reload, and keeps the booking-lab reset only when
+  /// storage itself is unavailable.
   final List<Booking> _facilityBookings = <Booking>[];
+  final BookingPersistence _bookingPersistence = LazyPrefsBookingPersistence();
+  Future<void>? _bookingsHydrated;
 
   List<Booking> get facilityBookings =>
       List<Booking>.unmodifiable(_facilityBookings);
 
+  /// Restores persisted bookings exactly once. Screens that must not
+  /// miss restored history (the admin inbox, conflict checks) await this
+  /// before reading [facilityBookings].
+  Future<void> ensureFacilityBookingsLoaded() =>
+      _bookingsHydrated ??= _restoreBookings();
+
+  Future<void> _restoreBookings() async {
+    try {
+      final List<Booking>? restored = await _bookingPersistence.read();
+      if (restored == null || restored.isEmpty) return;
+      bool changed = false;
+      for (final Booking b in restored) {
+        final bool known = _facilityBookings.any(
+          (Booking x) =>
+              x.facilityId == b.facilityId &&
+              x.start == b.start &&
+              x.end == b.end,
+        );
+        if (!known) {
+          _facilityBookings.add(b);
+          changed = true;
+        }
+      }
+      if (changed) notifyListeners();
+    } catch (_) {
+      // Corrupt or unavailable storage — keep whatever is in memory.
+    }
+  }
+
+  /// Write-through save that always hydrates first so an early local
+  /// change can never overwrite older restored history.
+  Future<void> flushFacilityBookings() async {
+    await ensureFacilityBookingsLoaded();
+    await _bookingPersistence.write(_facilityBookings);
+  }
+
   void addFacilityBooking(Booking booking) {
     _facilityBookings.add(booking);
     notifyListeners();
+    unawaited(flushFacilityBookings());
   }
 
   void cancelFacilityBooking(Booking booking) {
     _facilityBookings.remove(booking);
     notifyListeners();
+    unawaited(flushFacilityBookings());
   }
 
   void toggleEventFavourite(String eventId) {

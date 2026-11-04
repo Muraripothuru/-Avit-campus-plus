@@ -135,14 +135,15 @@ void main() {
     String route, {
     String email = admin,
     Future<void> Function(AppState state)? seed,
+    AppState? state,
   }) async {
-    final AppState state = AppState(
-      AppDependencies(secureStore: InMemorySecureStore()),
-    );
-    await tester.pumpWidget(AvitCampusPlus(state: state));
+    final AppState app =
+        state ??
+        AppState(AppDependencies(secureStore: InMemorySecureStore()));
+    await tester.pumpWidget(AvitCampusPlus(state: app));
     await tester.pump();
 
-    final Future<bool> signedIn = state.signIn(
+    final Future<bool> signedIn = app.signIn(
       identifier: email,
       password: password,
     );
@@ -151,7 +152,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(milliseconds: 300));
 
-    if (seed != null) await seed(state);
+    if (seed != null) await seed(app);
 
     final NavigatorState nav = tester.state<NavigatorState>(
       find.byType(Navigator),
@@ -160,7 +161,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await pumpFrames(tester, count: 6);
-    return state;
+    return app;
   }
 
   testWidgets('admin sees every request and triages its status', (
@@ -364,4 +365,73 @@ void main() {
     expect(find.text('Not available', skipOffstage: false), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'bookings and requests made before a restart show in the admin portal',
+    (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+
+      // Session one: a student creates both kinds of records.
+      String? laundryRef;
+      await openRoute(
+        tester,
+        Routes.dashboard,
+        email: student,
+        seed: (AppState s) async {
+          laundryRef = await s.submitServiceRequest(<String, Object?>{
+            'subject': 'Laundry room door is jammed',
+            'category': 'Hostel & Mess',
+            'urgency': 'High',
+            'studentName': 'Arun Kumar',
+            'studentId': 'AVIT2026001',
+            'description': 'The laundry room door on floor 2 will not close.',
+          });
+          s.addFacilityBooking(
+            Booking(
+              facilityId: 'sports_hall',
+              purpose: 'Evening practice session',
+              start: DateTime(2026, 11, 14, 17),
+              end: DateTime(2026, 11, 14, 18),
+              studentName: 'Arun Kumar',
+              studentId: 'AVIT2026001',
+            ),
+          );
+          await s.flushFacilityBookings();
+          await s.setServiceRequestStatus(laundryRef!, 'In progress');
+        },
+      );
+
+      // Restart: a brand-new AppState over the same storage, admin session.
+      await openRoute(
+        tester,
+        Routes.adminRequests,
+        state: AppState(AppDependencies(secureStore: InMemorySecureStore())),
+      );
+
+      expect(
+        find.byType(AdminRequestsScreen, skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('Requests (1)'), findsOneWidget);
+      expect(find.text('Laundry room door is jammed'), findsOneWidget);
+      expect(find.text('Arun Kumar • AVIT2026001'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(ValueKey<String>('record-$laundryRef')),
+          matching: find.text('In progress'),
+        ),
+        findsOneWidget,
+        reason: 'the triage status survived the restart too',
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('view-bookings')));
+      await tester.pump();
+
+      expect(find.text('Bookings (1)'), findsOneWidget);
+      expect(find.text('Sports Hall'), findsOneWidget);
+      expect(find.text('Evening practice session'), findsOneWidget);
+      expect(find.text('Arun Kumar • AVIT2026001'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

@@ -15,8 +15,10 @@ import '../../core/services/firebase_bridge.dart';
 /// implementation reproduces the same reference format in memory so tests
 /// and offline runs behave identically.
 abstract class ServiceRequestStore {
-  /// Saves the request and returns its SR reference.
-  Future<String> submit(Map<String, Object?> data);
+  /// Saves the request and returns its SR reference. [reference] forces a
+  /// specific reference so a mirrored submission keeps one identity in
+  /// both the local and the cloud store.
+  Future<String> submit(Map<String, Object?> data, {String? reference});
 
   /// Most recent requests for the signed-in student, newest first.
   Future<List<Map<String, String>>> recent({int limit = 20});
@@ -158,10 +160,10 @@ class DemoServiceRequestStore implements ServiceRequestStore {
   }
 
   @override
-  Future<String> submit(Map<String, Object?> data) async {
+  Future<String> submit(Map<String, Object?> data, {String? reference}) async {
     await _ensureLoaded();
     final int n = _random.nextInt(9000) + 1000;
-    final String ref = 'SR-${DateTime.now().year}-$n';
+    final String ref = reference ?? 'SR-${DateTime.now().year}-$n';
     _records.insert(0, <String, String>{
       'ref': ref,
       'subject': '${data['subject'] ?? ''}',
@@ -214,7 +216,7 @@ class DemoServiceRequestStore implements ServiceRequestStore {
 /// Firestore-backed store (docx sections 19-24).
 class FirebaseServiceRequestStore implements ServiceRequestStore {
   @override
-  Future<String> submit(Map<String, Object?> data) async {
+  Future<String> submit(Map<String, Object?> data, {String? reference}) async {
     final FirebaseFirestore? db = FirebaseBridge.db;
     if (db == null) {
       throw StateError('Firebase is not initialised');
@@ -228,9 +230,11 @@ class FirebaseServiceRequestStore implements ServiceRequestStore {
       ..['createdAt'] = FieldValue.serverTimestamp();
 
     // The document id is the SR reference, so allocate one and make sure it
-    // is still free before writing.
-    for (int attempt = 0; attempt < 5; attempt++) {
-      final String ref = _newReference();
+    // is still free before writing — unless the caller mirrors a reference
+    // the local store already owns.
+    final int attempts = reference == null ? 5 : 1;
+    for (int attempt = 0; attempt < attempts; attempt++) {
+      final String ref = reference ?? _newReference();
       final DocumentReference<Map<String, Object?>> doc = db
           .collection('service_requests')
           .doc(ref);
