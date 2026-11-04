@@ -341,6 +341,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.sm),
+            AVITMetricTile(
+              label: 'Requests & bookings',
+              value: 'All students',
+              icon: Icons.inbox_rounded,
+              tone: AVITStatusTone.warning,
+              onTap: () =>
+                  Navigator.pushNamed(context, Routes.adminRequests),
+            ),
             const SizedBox(height: AppSpacing.lg),
             AVITSectionHeader(
               title: 'Users',

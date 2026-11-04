@@ -35,6 +35,7 @@ abstract final class AccessPolicy {
     Routes.admin,
     Routes.announcements,
     Routes.auditLog,
+    Routes.adminRequests,
   };
 
   static const Set<String> _security = <String>{Routes.security};
@@ -53,6 +54,7 @@ abstract final class AccessPolicy {
     Routes.admin,
     Routes.announcements,
     Routes.auditLog,
+    Routes.adminRequests,
   };
 
   /// Whether [role] may open the protected destination [route].

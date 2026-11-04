@@ -11,6 +11,8 @@ class Booking {
     required this.purpose,
     required this.start,
     required this.end,
+    this.studentName = '',
+    this.studentId = '',
   });
 
   /// Stable identifier of the booked facility.
@@ -24,6 +26,13 @@ class Booking {
 
   /// Exclusive interval end.
   final DateTime end;
+
+  /// Who booked it — shown on the admin operations view; empty when the
+  /// session did not capture the student (demo seeds, older records).
+  final String studentName;
+
+  /// Student number of the booking owner, when known.
+  final String studentId;
 }
 
 /// One of the four bookable campus facilities.

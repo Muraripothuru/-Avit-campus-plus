@@ -69,6 +69,10 @@ abstract final class Routes {
   static const String announcements = '/announcements';
   static const String auditLog = '/audit-log';
 
+  /// Admin operations inbox: every service request and facility booking
+  /// from every student, with triage and cancellation controls.
+  static const String adminRequests = '/admin-requests';
+
   // Account
   static const String settings = '/settings';
   static const String help = '/help';
@@ -116,6 +120,7 @@ abstract final class Routes {
     admin,
     announcements,
     auditLog,
+    adminRequests,
     settings,
     help,
     about,

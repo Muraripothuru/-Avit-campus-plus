@@ -21,6 +21,14 @@ abstract class ServiceRequestStore {
   /// Most recent requests for the signed-in student, newest first.
   Future<List<Map<String, String>>> recent({int limit = 20});
 
+  /// Every request across all students, newest first — the admin
+  /// operations view.
+  Future<List<Map<String, String>>> all({int limit = 100});
+
+  /// Moves one request to [status] ('Submitted', 'In progress',
+  /// 'Resolved'); unknown references are ignored.
+  Future<void> updateStatus(String reference, String status);
+
   /// Uploads a real attachment and returns its download URL, or null when
   /// the backend is unavailable (attachments are optional).
   Future<String?> uploadAttachment({
@@ -178,6 +186,24 @@ class DemoServiceRequestStore implements ServiceRequestStore {
   }
 
   @override
+  Future<List<Map<String, String>>> all({int limit = 100}) async {
+    await _ensureLoaded();
+    return _records.take(limit).toList();
+  }
+
+  @override
+  Future<void> updateStatus(String reference, String status) async {
+    await _ensureLoaded();
+    final int index = _records.indexWhere(
+      (Map<String, String> r) => r['ref'] == reference,
+    );
+    if (index == -1) return;
+    _records[index] = Map<String, String>.from(_records[index])
+      ..['status'] = status;
+    await _persist();
+  }
+
+  @override
   Future<String?> uploadAttachment({
     required String reference,
     required String fileName,
@@ -245,33 +271,65 @@ class FirebaseServiceRequestStore implements ServiceRequestStore {
           .collection('service_requests')
           .where('ownerUid', isEqualTo: uid)
           .get();
-      final List<QueryDocumentSnapshot<Map<String, Object?>>> docs =
-          snap.docs.toList()..sort(
+      return _takeNewest(snap.docs, limit);
+    } catch (_) {
+      return const <Map<String, String>>[];
+    }
+  }
+
+  @override
+  Future<List<Map<String, String>>> all({int limit = 100}) async {
+    final FirebaseFirestore? db = FirebaseBridge.db;
+    if (db == null) return const <Map<String, String>>[];
+    try {
+      final QuerySnapshot<Map<String, Object?>> snap = await db
+          .collection('service_requests')
+          .get();
+      return _takeNewest(snap.docs, limit);
+    } catch (_) {
+      return const <Map<String, String>>[];
+    }
+  }
+
+  @override
+  Future<void> updateStatus(String reference, String status) async {
+    final FirebaseFirestore? db = FirebaseBridge.db;
+    if (db == null) throw StateError('Firebase is not initialised');
+    await FirebaseBridge.ensureIdentity();
+    await db.collection('service_requests').doc(reference).update(
+      <String, Object?>{'status': status},
+    );
+  }
+
+  List<Map<String, String>> _takeNewest(
+    List<QueryDocumentSnapshot<Map<String, Object?>>> docs,
+    int limit,
+  ) {
+    final List<QueryDocumentSnapshot<Map<String, Object?>>> sorted =
+        docs.toList()
+          ..sort(
             (
               QueryDocumentSnapshot<Map<String, Object?>> a,
               QueryDocumentSnapshot<Map<String, Object?>> b,
             ) => _timestampOf(b).compareTo(_timestampOf(a)),
           );
-      return <Map<String, String>>[
-        for (final QueryDocumentSnapshot<Map<String, Object?>> d in docs.take(
-          limit,
-        ))
-          <String, String>{
-            'ref': d.id,
-            'subject': '${d.data()['subject'] ?? ''}',
-            'category': '${d.data()['category'] ?? ''}',
-            'urgency': '${d.data()['urgency'] ?? ''}',
-            'name': '${d.data()['studentName'] ?? ''}',
-            'studentId': '${d.data()['studentId'] ?? ''}',
-            'description': '${d.data()['description'] ?? ''}',
-            'status': '${d.data()['status'] ?? 'Submitted'}',
-            'preferredDate': '${d.data()['preferredDate'] ?? ''}',
-            'createdAt': _timestampOf(d).toIso8601String(),
-          },
-      ];
-    } catch (_) {
-      return const <Map<String, String>>[];
-    }
+    return <Map<String, String>>[
+      for (final QueryDocumentSnapshot<Map<String, Object?>> d in sorted.take(
+        limit,
+      ))
+        <String, String>{
+          'ref': d.id,
+          'subject': '${d.data()['subject'] ?? ''}',
+          'category': '${d.data()['category'] ?? ''}',
+          'urgency': '${d.data()['urgency'] ?? ''}',
+          'name': '${d.data()['studentName'] ?? ''}',
+          'studentId': '${d.data()['studentId'] ?? ''}',
+          'description': '${d.data()['description'] ?? ''}',
+          'status': '${d.data()['status'] ?? 'Submitted'}',
+          'preferredDate': '${d.data()['preferredDate'] ?? ''}',
+          'createdAt': _timestampOf(d).toIso8601String(),
+        },
+    ];
   }
 
   DateTime _timestampOf(DocumentSnapshot<Map<String, Object?>> doc) {

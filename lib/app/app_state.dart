@@ -446,6 +446,27 @@ class AppState extends ChangeNotifier {
         .toList();
   }
 
+  /// Every service request across all students, newest first — the admin
+  /// operations view, deliberately unscoped so staff see the whole queue.
+  Future<List<Map<String, String>>> allServiceRequests({
+    int limit = 100,
+  }) => _serviceRequests.all(limit: limit);
+
+  /// Moves one request to a new lifecycle status. Firestore is
+  /// authoritative when it accepts the write, otherwise the demo store
+  /// applies it (mirroring [submitServiceRequest]).
+  Future<void> setServiceRequestStatus(String reference, String status) async {
+    if (FirebaseBridge.ready) {
+      try {
+        await FirebaseServiceRequestStore().updateStatus(reference, status);
+        return;
+      } catch (_) {
+        // Fall through to the demo store.
+      }
+    }
+    return _demoServiceRequests.updateStatus(reference, status);
+  }
+
   /// Confirmed facility bookings held by the app-owned state: the list
   /// survives navigating away from the booking screen and back, and — as
   /// the booking lab requires — resets when the app restarts.

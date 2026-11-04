@@ -48,6 +48,7 @@ import 'features/safety/emergency_screen.dart';
 import 'features/safety/report_incident_screen.dart';
 import 'features/safety/scanner_screen.dart';
 import 'features/search/search_screen.dart';
+import 'features/staff/admin_requests_screen.dart';
 import 'models/user.dart';
 import 'navigation/app_shell.dart';
 import 'navigation/unknown_route_screen.dart';
@@ -138,6 +139,9 @@ class _AvitCampusPlusState extends State<AvitCampusPlus> {
       Routes.admin ||
       Routes.announcements ||
       Routes.auditLog => _shellFor(settings),
+
+      // Staff operations (standalone full-screen pages)
+      Routes.adminRequests => const AdminRequestsScreen(),
 
       // Academics
       Routes.academics => const AcademicsScreen(),

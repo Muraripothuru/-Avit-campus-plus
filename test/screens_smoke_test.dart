@@ -45,6 +45,7 @@ import 'package:avit_campus_plus/features/safety/report_incident_screen.dart';
 import 'package:avit_campus_plus/features/safety/scanner_screen.dart';
 import 'package:avit_campus_plus/features/search/search_screen.dart';
 import 'package:avit_campus_plus/features/staff/admin_dashboard_screen.dart';
+import 'package:avit_campus_plus/features/staff/admin_requests_screen.dart';
 import 'package:avit_campus_plus/features/staff/announcements_screen.dart';
 import 'package:avit_campus_plus/features/staff/audit_log_screen.dart';
 import 'package:avit_campus_plus/features/staff/security_dashboard_screen.dart';
@@ -315,6 +316,12 @@ void main() {
           admin,
         ),
         (Routes.auditLog, 'audit log', () => screenOf(AuditLogScreen), admin),
+        (
+          Routes.adminRequests,
+          'admin requests',
+          () => screenOf(AdminRequestsScreen),
+          admin,
+        ),
       ];
 
   for (final (String route, String label, Finder Function() finder, String? email)

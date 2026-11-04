@@ -34,6 +34,15 @@ abstract final class ServiceRecordQuery {
     'Low',
   ];
 
+  /// Lifecycle statuses, in the order they are shown as chips on the
+  /// admin operations view.
+  static const List<String> statusOptions = <String>[
+    'All',
+    'Submitted',
+    'In progress',
+    'Resolved',
+  ];
+
   /// Sort options offered by the sort dropdown.
   static const List<String> sortOptions = <String>[
     'Newest first',
@@ -43,15 +52,16 @@ abstract final class ServiceRecordQuery {
     'Preferred date',
   ];
 
-  /// Filters [records] by [query], [urgency] and [service], then applies
-  /// [sort]. Records missing a sort key keep a deterministic fallback so
-  /// the list never shuffles arbitrarily.
+  /// Filters [records] by [query], [urgency], [status] and [service], then
+  /// applies [sort]. Records missing a sort key keep a deterministic
+  /// fallback so the list never shuffles arbitrarily.
   static List<Map<String, String>> apply(
     List<Map<String, String>> records, {
     String query = '',
     String urgency = 'All',
     String service = 'All',
     String sort = 'Newest first',
+    String status = 'All',
   }) {
     final String q = query.trim().toLowerCase();
     final List<Map<String, String>> matched = records.where((
@@ -59,6 +69,9 @@ abstract final class ServiceRecordQuery {
     ) {
       if (urgency != 'All' && (r['urgency'] ?? '') != urgency) return false;
       if (service != 'All' && (r['category'] ?? '') != service) return false;
+      if (status != 'All' && (r['status'] ?? 'Submitted') != status) {
+        return false;
+      }
       if (q.isEmpty) return true;
       return searchFields.any(
         (String field) => (r[field] ?? '').toLowerCase().contains(q),

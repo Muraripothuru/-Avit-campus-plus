@@ -221,6 +221,8 @@ class _FacilityBookingScreenState extends State<FacilityBookingScreen> {
       purpose: _purpose.text.trim(),
       start: _start,
       end: _end,
+      studentName: state.user?.fullName ?? '',
+      studentId: state.user?.studentId ?? '',
     );
     state.addFacilityBooking(booking);
     showAVITSnackBar(

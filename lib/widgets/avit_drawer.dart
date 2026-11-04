@@ -145,6 +145,10 @@ class AVITDrawer extends StatelessWidget {
           _Item('Administration', Icons.admin_panel_settings_rounded),
           Routes.admin,
         ),
+        (
+          _Item('Requests & bookings', Icons.inbox_rounded),
+          Routes.adminRequests,
+        ),
         (_Item('Announcements', Icons.campaign_rounded), Routes.announcements),
         (_Item('Audit log', Icons.history_rounded), Routes.auditLog),
       ],
